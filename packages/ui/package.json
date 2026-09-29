@@ -9,9 +9,11 @@
       "types": "./src/index.ts",
       "default": "./src/index.ts"
     },
-    "./terminal.css": "./src/terminal.css"
+    "./terminal.css": "./src/terminal.css",
+    "./theme.css": "./src/theme.css"
   },
   "dependencies": {
+    "@fontsource/jetbrains-mono": "^5.3.0",
     "@terminal-trainer/core": "*"
   },
   "scripts": {

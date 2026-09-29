@@ -1,0 +1,735 @@
+/*
+ * Terminal Trainer design system.
+ * Shared by the desktop and mobile apps; each app adds only layout on top.
+ *
+ * Contents: fonts → tokens → base → buttons & fields → surfaces & chips →
+ * progress & avatars → Mors bubble → auth page → track menu → challenge
+ * text → accessibility.
+ */
+
+@import "@fontsource/jetbrains-mono/400.css";
+@import "@fontsource/jetbrains-mono/700.css";
+
+/* ---- Tokens -------------------------------------------------------------- */
+
+:root {
+  /* Ink, gold, arcane violet and phosphor green: the four colours of the app. */
+  --bg: #0a0d14;
+  --bg-elevated: #0f1420;
+  --surface: #131a26;
+  --surface-2: #1a2231;
+  --surface-hover: #1f2938;
+  --border: #243044;
+  --border-strong: #31405a;
+  --text: #e8ecf3;
+  --muted: #9aa5b8;
+  --faint: #6b7689;
+  --accent: #f2b84b;
+  --accent-strong: #e0a53a;
+  --on-accent: #1a1200;
+  --arcane: #9d8cff;
+  --arcane-soft: rgba(157, 140, 255, 0.16);
+  --prompt: #7ee787;
+  --success: #3fd68a;
+  --danger: #ff6b6b;
+  --focus: #f2b84b;
+  --radius-sm: 8px;
+  --radius: 12px;
+  --radius-lg: 18px;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.35);
+  --glow-accent: 0 0 0 1px rgba(242, 184, 75, 0.45), 0 0 28px rgba(242, 184, 75, 0.18);
+  --glow-success: 0 0 0 1px rgba(63, 214, 138, 0.45), 0 0 24px rgba(63, 214, 138, 0.14);
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --tap: 44px;
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f3f5f9;
+    --bg-elevated: #ffffff;
+    --surface: #ffffff;
+    --surface-2: #eef1f6;
+    --surface-hover: #e6eaf1;
+    --border: #d9dfe8;
+    --border-strong: #c3ccd9;
+    --text: #161c28;
+    --muted: #5b6678;
+    --faint: #8b95a7;
+    --accent: #b8821a;
+    --accent-strong: #9e6f10;
+    --on-accent: #ffffff;
+    --arcane: #6a5ae0;
+    --arcane-soft: rgba(106, 90, 224, 0.12);
+    --prompt: #1a7f37;
+    --success: #1f9d61;
+    --danger: #d0353f;
+    --shadow: 0 1px 2px rgba(20, 30, 50, 0.06), 0 8px 24px rgba(20, 30, 50, 0.08);
+    color-scheme: light;
+  }
+}
+
+/* ---- Base ---------------------------------------------------------------- */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
+p {
+  margin: 0;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+code,
+kbd {
+  font-family: var(--mono);
+}
+
+[hidden] {
+  display: none !important;
+}
+
+/* The terminal widget picks up the bundled monospace font. */
+.terminal {
+  --terminal-font: var(--mono);
+}
+
+/* Faint radial glows and a grid: the "arcane" page background. */
+.arcane-bg {
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(60% 50% at 15% 0%, var(--arcane-soft), transparent 70%),
+    radial-gradient(50% 40% at 90% 100%, rgba(242, 184, 75, 0.1), transparent 70%),
+    repeating-linear-gradient(0deg, transparent 0 39px, rgba(255, 255, 255, 0.025) 39px 40px),
+    repeating-linear-gradient(90deg, transparent 0 39px, rgba(255, 255, 255, 0.025) 39px 40px);
+}
+
+.eyebrow {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* ---- Buttons and fields -------------------------------------------------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 16px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  transition:
+    background 120ms ease,
+    border-color 120ms ease,
+    transform 80ms ease;
+}
+
+.btn:hover {
+  background: var(--surface-hover);
+  border-color: var(--arcane);
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn:disabled {
+  opacity: 0.45;
+}
+
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+}
+
+.btn-primary:hover {
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
+}
+
+.btn-ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--muted);
+}
+
+.btn-ghost:hover {
+  color: var(--text);
+  background: var(--surface-2);
+  border-color: transparent;
+}
+
+.btn-danger {
+  background: transparent;
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.btn-block {
+  width: 100%;
+}
+
+.btn-sm {
+  min-height: 32px;
+  padding: 0 12px;
+  font-size: 13px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.field-input {
+  min-height: var(--tap);
+  padding: 0 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--bg-elevated);
+  color: var(--text);
+  font: inherit;
+  font-size: 16px; /* 16px stops iOS from zooming into the field */
+}
+
+.field-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(242, 184, 75, 0.2);
+}
+
+.form-error {
+  min-height: 1.2em;
+  color: var(--danger);
+  font-size: 14px;
+}
+
+/* ---- Surfaces, chips, keys ----------------------------------------------- */
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 13px;
+}
+
+.kbd {
+  display: inline-block;
+  padding: 1px 6px;
+  border: 1px solid var(--border-strong);
+  border-bottom-width: 2px;
+  border-radius: 5px;
+  background: var(--surface-2);
+  font-family: var(--mono);
+  font-size: 0.8em;
+}
+
+/* ---- Progress and avatars ------------------------------------------------ */
+
+.progress {
+  display: block;
+  height: 6px;
+  background: var(--surface-2);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progress-bar {
+  display: block;
+  height: 100%;
+  width: 0;
+  border-radius: 3px;
+  background: linear-gradient(90deg, var(--accent), var(--success));
+  transition: width 300ms ease;
+}
+
+.avatar {
+  display: inline-grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--arcane-soft);
+  border: 1px solid var(--arcane);
+  color: var(--arcane);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.mors-avatar {
+  display: inline-block;
+  flex: none;
+  border-radius: 50%;
+  filter: drop-shadow(0 0 10px rgba(157, 140, 255, 0.25));
+}
+
+.mors-avatar svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* ---- Mors bubble --------------------------------------------------------- */
+
+.mors-bubble {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.mors-speech {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  padding: 10px 14px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  border-top-left-radius: 4px;
+}
+
+.mors-name {
+  display: block;
+  margin-bottom: 2px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.mors-text {
+  font-size: 14.5px;
+  line-height: 1.5;
+  white-space: pre-line;
+}
+
+.mors-bubble-enter {
+  animation: mors-enter 260ms ease;
+}
+
+@keyframes mors-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+/* ---- Auth page ----------------------------------------------------------- */
+
+.auth-page {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+  padding: max(24px, env(safe-area-inset-top)) 20px max(24px, env(safe-area-inset-bottom));
+}
+
+.auth-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 10px;
+  max-width: 420px;
+}
+
+.auth-avatar .mors-avatar {
+  filter: drop-shadow(0 0 24px rgba(157, 140, 255, 0.45));
+}
+
+.auth-title {
+  font-size: 30px;
+}
+
+.auth-tagline {
+  color: var(--muted);
+  font-size: 15px;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 440px;
+  padding: 24px;
+}
+
+.auth-heading {
+  font-size: 18px;
+  margin-bottom: 14px;
+}
+
+.profile-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.profile-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.profile-button {
+  flex: 1;
+  min-width: 0;
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  text-align: left;
+  transition:
+    border-color 120ms ease,
+    background 120ms ease;
+}
+
+.profile-button:hover {
+  border-color: var(--accent);
+  background: var(--surface-hover);
+}
+
+.profile-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.profile-name {
+  font-weight: 650;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-meta {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.profile-remove {
+  flex: none;
+  min-width: var(--tap);
+  min-height: var(--tap);
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--faint);
+  font-size: 14px;
+}
+
+.profile-remove:hover,
+.profile-remove[data-armed="true"] {
+  color: var(--danger);
+  background: rgba(255, 107, 107, 0.1);
+}
+
+.auth-or {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 18px 0 6px;
+  color: var(--faint);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.auth-or::before,
+.auth-or::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.profile-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.sigil-picker {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.sigil-picker legend {
+  padding: 0;
+  margin-bottom: 8px;
+}
+
+.sigil-options {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 6px;
+}
+
+.sigil-option {
+  aspect-ratio: 1;
+  min-height: 40px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-elevated);
+  font-size: 18px;
+  color: var(--muted);
+  transition:
+    border-color 120ms ease,
+    color 120ms ease,
+    background 120ms ease;
+}
+
+.sigil-option:hover {
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+
+.sigil-option[aria-checked="true"] {
+  color: var(--arcane);
+  border-color: var(--arcane);
+  background: var(--arcane-soft);
+}
+
+/* ---- Track menu ---------------------------------------------------------- */
+
+.track-menu {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 12px;
+}
+
+.track-card {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto auto;
+  gap: 4px 14px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  text-align: left;
+  box-shadow: var(--shadow);
+  transition:
+    transform 120ms ease,
+    border-color 120ms ease,
+    box-shadow 120ms ease;
+}
+
+.track-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--arcane);
+}
+
+.track-card.open {
+  border-color: var(--accent);
+  box-shadow: var(--glow-accent);
+}
+
+.track-card.finished {
+  border-color: var(--success);
+}
+
+.track-icon {
+  grid-row: 1 / span 2;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--arcane-soft);
+  color: var(--arcane);
+}
+
+.track-card.finished .track-icon {
+  background: rgba(63, 214, 138, 0.14);
+  color: var(--success);
+}
+
+.track-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.track-title {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.track-tagline {
+  font-size: 13.5px;
+  color: var(--muted);
+}
+
+.track-commands {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.track-commands code {
+  padding: 1px 7px;
+  border-radius: 6px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.track-progress {
+  grid-column: 2;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.track-progress .progress {
+  flex: 1;
+}
+
+.track-count {
+  flex: none;
+  min-width: 44px;
+  text-align: right;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.track-card.finished .track-count {
+  color: var(--success);
+}
+
+/* ---- Challenge text ------------------------------------------------------ */
+
+.challenge-story {
+  margin: 0 0 10px;
+  padding-left: 12px;
+  border-left: 2px solid var(--arcane);
+  color: var(--muted);
+  font-style: italic;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.challenge-task {
+  font-size: 15.5px;
+  line-height: 1.5;
+}
+
+.challenge-reveal {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  font-size: 14px;
+}
+
+.challenge-reveal code {
+  display: block;
+  margin-top: 4px;
+  color: var(--prompt);
+}
+
+.challenge-reveal[hidden] {
+  display: none;
+}
+
+/* ---- Accessibility ------------------------------------------------------- */
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+}
