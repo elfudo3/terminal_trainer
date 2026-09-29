@@ -1,5 +1,6 @@
 /** All built-in commands, in the order `help` lists them. */
 import { fileCommands } from "./files";
+import { gitCommands } from "./git";
 import { helpCommands } from "./help";
 import { navigationCommands } from "./navigation";
 import { searchCommands } from "./search";
@@ -11,6 +12,7 @@ export const defaultCommands = [
   ...fileCommands,
   ...textCommands,
   ...searchCommands,
+  ...gitCommands,
   ...systemCommands,
   ...helpCommands,
 ];

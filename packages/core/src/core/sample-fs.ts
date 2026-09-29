@@ -5,6 +5,7 @@
  */
 import { VirtualFS } from "./filesystem";
 import { defaultCommands } from "./commands";
+import { MORS_FILES } from "../mors/files";
 
 const HOME = "/home/user";
 
@@ -126,7 +127,7 @@ const EMPTY_DIRS = ["/tmp", "/root", "/usr/local/bin", `${HOME}/pictures`, `${HO
 export function createSampleFS(): VirtualFS {
   const fs = new VirtualFS();
   for (const dir of EMPTY_DIRS) fs.mkdir(dir, { parents: true });
-  for (const [path, content] of Object.entries(FILES)) {
+  for (const [path, content] of Object.entries({ ...FILES, ...MORS_FILES })) {
     fs.mkdir(path.slice(0, path.lastIndexOf("/")), { parents: true });
     fs.writeFile(path, content);
   }

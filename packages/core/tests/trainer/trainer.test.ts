@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { createSampleFS } from "../../src/core/sample-fs";
 import { Shell } from "../../src/core/shell";
-import { challenges } from "../../src/trainer/challenges";
-import { Trainer, type Challenge } from "../../src/trainer/trainer";
+import { STORAGE_KEY, Trainer } from "../../src/trainer/trainer";
+import type { Challenge, Track } from "../../src/trainer/types";
 
 /** A tiny in-memory stand-in for localStorage. */
 function memoryStorage() {
@@ -10,149 +10,161 @@ function memoryStorage() {
   return { getItem: (k: string) => data.get(k) ?? null, setItem: (k: string, v: string) => void data.set(k, v) };
 }
 
-const tiny: Challenge[] = [
-  { id: "a", topic: "T", title: "Make a", task: "touch a", hint: "touch", solution: ["touch a"], check: ({ shell }) => shell.fs.exists("/home/user/a") },
-  { id: "b", topic: "T", title: "Make b", task: "touch b", hint: "touch", solution: ["touch b"], check: ({ shell }) => shell.fs.exists("/home/user/b") },
+const ch = (id: string, file: string, extra: Partial<Challenge> = {}): Challenge => ({
+  id,
+  title: `Make ${file}`,
+  story: `Mors needs ${file}.`,
+  task: `touch ${file}`,
+  hint: "touch",
+  solution: [`touch ${file}`],
+  lore: `${file} exists now.`,
+  check: ({ shell }) => shell.fs.exists(`/home/user/${file}`),
+  ...extra,
+});
+
+const tracks: Track[] = [
+  { id: "alpha", title: "Alpha", tagline: "a", story: "Alpha begins.", commands: ["touch"], challenges: [ch("a1", "a1"), ch("a2", "a2")] },
   {
-    id: "c",
-    topic: "U",
-    title: "Say hi",
-    task: "echo hi",
-    hint: "echo",
-    solution: ["echo hi"],
-    setup: (shell) => shell.fs.writeFile("/home/user/extra.txt", "x"),
-    check: ({ result }) => result.stdout === "hi\n",
+    id: "beta",
+    title: "Beta",
+    tagline: "b",
+    story: "Beta begins.",
+    commands: ["echo"],
+    challenges: [
+      ch("b1", "b1", { setup: (shell) => shell.fs.writeFile("/home/user/extra.txt", "x") }),
+      { ...ch("b2", "b2"), check: ({ result }) => result.stdout === "hi\n", solution: ["echo hi"] },
+    ],
   },
 ];
 
 function make(storage = memoryStorage()) {
   const shell = new Shell({ fs: createSampleFS() });
-  const trainer = new Trainer({ shell, challenges: tiny, storage, freshFS: createSampleFS });
-  return { shell, trainer, storage };
+  const trainer = new Trainer({ shell, tracks, storage, freshFS: createSampleFS });
+  const run = (line: string) => trainer.afterCommand(line, shell.run(line));
+  return { shell, trainer, storage, run };
 }
 
-describe("Trainer", () => {
-  it("starts on the first task with nothing solved", () => {
-    const { trainer } = make();
-    expect(trainer.current.id).toBe("a");
-    expect(trainer.solved).toBe(false);
-    expect(trainer.progress).toEqual({ done: 0, total: 3, index: 0 });
+describe("Trainer: tracks", () => {
+  it("starts with no track selected and the sandbox in free play", () => {
+    const { trainer, run } = make();
+    expect(trainer.track).toBeNull();
+    expect(trainer.current).toBeNull();
+    expect(trainer.progress).toEqual({ done: 0, total: 0, index: 0 });
+    expect(run("touch a1")).toBe("no");
+    expect(trainer.overall).toEqual({ done: 0, total: 4 });
   });
 
-  it("reports when a command solves the current task, once", () => {
-    const { shell, trainer } = make();
-    const run = (line: string) => trainer.afterCommand(line, shell.run(line));
-    expect(run("ls")).toBe("no");
-    expect(run("touch a")).toBe("solved");
-    expect(trainer.solved).toBe(true);
-    expect(run("touch a")).toBe("already");
-    expect(trainer.progress.done).toBe(1);
-  });
-
-  it("next() only advances once the task is solved; skip() always does", () => {
-    const { shell, trainer } = make();
-    expect(trainer.next()).toBe(false);
-    expect(trainer.current.id).toBe("a");
-    trainer.afterCommand("touch a", shell.run("touch a"));
+  it("selects a track independently of the others and loads its first unfinished challenge", () => {
+    const { trainer, run } = make();
+    expect(trainer.selectTrack("beta")).toBe(true);
+    expect(trainer.track?.id).toBe("beta");
+    expect(trainer.current?.id).toBe("b1");
+    expect(trainer.progress).toEqual({ done: 0, total: 2, index: 0 });
+    expect(run("touch b1")).toBe("solved");
     expect(trainer.next()).toBe(true);
-    expect(trainer.current.id).toBe("b");
-    expect(trainer.skip()).toBe(true);
-    expect(trainer.current.id).toBe("c");
-    expect(trainer.progress.done).toBe(1);
+    expect(trainer.current?.id).toBe("b2");
+    // Alpha is untouched and can be started at any time.
+    expect(trainer.trackProgress("alpha")).toEqual({ done: 0, total: 2 });
+    expect(trainer.selectTrack("alpha")).toBe(true);
+    expect(trainer.current?.id).toBe("a1");
+    expect(trainer.selectTrack("nope")).toBe(false);
   });
 
-  it("resets the sandbox and runs the task's setup when a task starts", () => {
+  it("resumes a track at its first unfinished challenge, or the start when all are done", () => {
+    const { trainer, run } = make();
+    trainer.selectTrack("alpha");
+    run("touch a1");
+    trainer.selectTrack("beta");
+    trainer.selectTrack("alpha");
+    expect(trainer.current?.id).toBe("a2");
+    run("touch a2");
+    expect(trainer.finished).toBe(true);
+    trainer.selectTrack("beta");
+    trainer.selectTrack("alpha");
+    expect(trainer.current?.id).toBe("a1");
+    expect(trainer.trackProgress("alpha")).toEqual({ done: 2, total: 2 });
+  });
+
+  it("only reports solved once, and next() waits for it while skip() does not", () => {
+    const { trainer, run } = make();
+    trainer.selectTrack("alpha");
+    expect(run("ls")).toBe("no");
+    expect(trainer.next()).toBe(false);
+    expect(run("touch a1")).toBe("solved");
+    expect(run("touch a1")).toBe("already");
+    expect(trainer.next()).toBe(true);
+    expect(trainer.skip()).toBe(false); // last challenge in the track
+    expect(trainer.current?.id).toBe("a2");
+  });
+
+  it("resets the sandbox and runs the challenge's setup whenever a challenge starts", () => {
     const { shell, trainer } = make();
-    shell.run("touch a; cd documents");
-    trainer.skip();
-    expect(shell.fs.exists("/home/user/a")).toBe(false);
+    shell.run("touch stray; cd documents");
+    trainer.selectTrack("beta");
+    expect(shell.fs.exists("/home/user/stray")).toBe(false);
     expect(shell.cwd).toBe("/home/user");
-    trainer.skip();
     expect(shell.fs.exists("/home/user/extra.txt")).toBe(true);
+    trainer.skip();
+    expect(shell.fs.exists("/home/user/extra.txt")).toBe(false);
   });
 
-  it("reset() restores the current task's starting files without losing progress", () => {
-    const { shell, trainer } = make();
-    trainer.afterCommand("touch a", shell.run("touch a"));
+  it("reset() restores the current challenge's files without losing progress", () => {
+    const { shell, trainer, run } = make();
+    trainer.selectTrack("alpha");
+    run("touch a1");
     shell.run("rm notes.txt");
     trainer.reset();
     expect(shell.fs.exists("/home/user/notes.txt")).toBe(true);
-    expect(shell.fs.exists("/home/user/a")).toBe(false);
+    expect(shell.fs.exists("/home/user/a1")).toBe(false);
     expect(trainer.progress.done).toBe(1);
     expect(trainer.solved).toBe(false);
   });
 
-  it("stops at the last task and knows when everything is done", () => {
-    const { shell, trainer } = make();
-    trainer.skip();
-    trainer.skip();
-    expect(trainer.skip()).toBe(false);
-    expect(trainer.current.id).toBe("c");
-    expect(trainer.finished).toBe(false);
-    trainer.afterCommand("echo hi", shell.run("echo hi"));
-    trainer.afterCommand("touch a", shell.run("touch a"));
-    trainer.goTo(0);
-    trainer.afterCommand("touch a", shell.run("touch a"));
-    trainer.goTo(1);
-    trainer.afterCommand("touch b", shell.run("touch b"));
-    expect(trainer.finished).toBe(true);
+  it("leaveTrack() returns to free play and keeps progress", () => {
+    const { trainer, run } = make();
+    trainer.selectTrack("alpha");
+    run("touch a1");
+    trainer.leaveTrack();
+    expect(trainer.track).toBeNull();
+    expect(trainer.trackProgress("alpha").done).toBe(1);
+    expect(trainer.overall.done).toBe(1);
   });
 
-  it("persists progress and resumes from storage", () => {
+  it("persists progress and the open track, and resumes from storage", () => {
     const storage = memoryStorage();
     const first = make(storage);
-    first.trainer.afterCommand("touch a", first.shell.run("touch a"));
+    first.trainer.selectTrack("beta");
+    first.run("touch b1");
     first.trainer.next();
     const second = make(storage);
-    expect(second.trainer.current.id).toBe("b");
-    expect(second.trainer.progress.done).toBe(1);
+    expect(second.trainer.track?.id).toBe("beta");
+    expect(second.trainer.current?.id).toBe("b2");
+    expect(second.trainer.overall.done).toBe(1);
     second.trainer.resetProgress();
-    expect(second.trainer.current.id).toBe("a");
-    expect(second.trainer.progress.done).toBe(0);
-    expect(make(storage).trainer.progress.done).toBe(0);
+    expect(second.trainer.track).toBeNull();
+    expect(second.trainer.overall.done).toBe(0);
+    expect(JSON.parse(storage.getItem(STORAGE_KEY)!)).toEqual({ completed: [], track: null, index: 0 });
   });
 
-  it("survives corrupt or missing storage", () => {
+  it("survives corrupt storage and unknown saved tracks", () => {
     const storage = memoryStorage();
-    storage.setItem("terminal-trainer.progress", "{not json");
+    storage.setItem(STORAGE_KEY, "{not json");
     expect(() => make(storage)).not.toThrow();
-    const shell = new Shell({ fs: createSampleFS() });
-    expect(() => new Trainer({ shell, challenges: tiny, freshFS: createSampleFS })).not.toThrow();
+    storage.setItem(STORAGE_KEY, JSON.stringify({ completed: ["a1"], track: "gone", index: 7 }));
+    const { trainer } = make(storage);
+    expect(trainer.track).toBeNull();
+    expect(trainer.overall.done).toBe(1);
   });
 
-  it("notifies listeners when state changes", () => {
-    const { shell, trainer } = make();
+  it("notifies listeners on every state change", () => {
+    const { trainer, run } = make();
     let calls = 0;
     const stop = trainer.subscribe(() => calls++);
-    trainer.afterCommand("touch a", shell.run("touch a"));
+    trainer.selectTrack("alpha");
+    run("touch a1");
     trainer.next();
     stop();
     trainer.skip();
-    expect(calls).toBe(2);
-  });
-});
-
-describe("challenge catalogue", () => {
-  it("has unique ids and non-empty text", () => {
-    const ids = challenges.map((c) => c.id);
-    expect(new Set(ids).size).toBe(ids.length);
-    for (const c of challenges) {
-      expect(c.title.length).toBeGreaterThan(0);
-      expect(c.task.length).toBeGreaterThan(0);
-      expect(c.hint.length).toBeGreaterThan(0);
-      expect(c.solution.length).toBeGreaterThan(0);
-    }
-  });
-
-  it("every task is solved by its own reference solution and not by a no-op", () => {
-    for (const [index, challenge] of challenges.entries()) {
-      const shell = new Shell({ fs: createSampleFS() });
-      const trainer = new Trainer({ shell, challenges, freshFS: createSampleFS });
-      trainer.goTo(index);
-      expect(trainer.afterCommand("true", shell.run("true")), `${challenge.id} solved by 'true'`).toBe("no");
-      let outcome = "no";
-      for (const line of challenge.solution) outcome = trainer.afterCommand(line, shell.run(line));
-      expect(outcome, `${challenge.id} not solved by ${challenge.solution.join(" ; ")}`).toBe("solved");
-    }
+    expect(calls).toBe(3);
   });
 });

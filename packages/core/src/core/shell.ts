@@ -4,6 +4,7 @@
  * it easy to test and lets the UI stay thin.
  */
 import { FsError, VirtualFS, resolvePath } from "./filesystem";
+import { GitRepo } from "./git";
 import { expandGlob, hasGlob } from "./glob";
 import { ParseError, expandWord, parseLine, type SimpleCommand, type Word } from "./parser";
 import type { Command } from "./types";
@@ -36,6 +37,8 @@ export class Shell {
   readonly home: string;
   readonly env = new Map<string, string>();
   readonly history: string[] = [];
+  /** Git repositories by root path (see core/git.ts). */
+  readonly repos = new Map<string, GitRepo>();
   cwd: string;
   /** Exit code of the last command, exposed as `$?`. */
   lastCode = 0;
@@ -100,6 +103,30 @@ export class Shell {
     this.cwd = this.home;
     this.previousCwd = this.home;
     this.env.set("PWD", this.home);
+    this.repos.clear();
+  }
+
+  // ---- Git ---------------------------------------------------------------
+
+  /** Creates (or re-opens) a repository rooted at `root`, adding a .git marker directory. */
+  initRepo(root: string): { repo: GitRepo; existed: boolean } {
+    const existing = this.repos.get(root);
+    if (existing) return { repo: existing, existed: true };
+    const repo = new GitRepo(root, `${this.user} <${this.user}@${this.host}>`);
+    this.repos.set(root, repo);
+    const gitDir = root === "/" ? "/.git" : `${root}/.git`;
+    if (!this.fs.exists(gitDir)) this.fs.mkdir(gitDir);
+    this.fs.writeFile(`${gitDir}/HEAD`, "ref: refs/heads/main\n");
+    return { repo, existed: false };
+  }
+
+  /** The repository whose root contains `absPath`, if any (deepest wins). */
+  findRepo(absPath: string): GitRepo | undefined {
+    let best: GitRepo | undefined;
+    for (const repo of this.repos.values()) {
+      if (repo.relative(absPath) !== null && (!best || repo.root.length > best.root.length)) best = repo;
+    }
+    return best;
   }
 
   /** The directory before the last `cd`, used by `cd -`. */

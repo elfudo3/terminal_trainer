@@ -1,65 +1,56 @@
 import { describe, expect, it } from "vitest";
 import { createSampleFS } from "../../src/core/sample-fs";
 import { Shell } from "../../src/core/shell";
-import { challenges } from "../../src/trainer/challenges";
+import { createMors } from "../../src/mors/voice";
 import { trainerCommands } from "../../src/trainer/commands";
+import { tracks } from "../../src/trainer/tracks";
 import { Trainer } from "../../src/trainer/trainer";
 
 function make() {
   const shell = new Shell({ fs: createSampleFS() });
-  const trainer = new Trainer({ shell, challenges, freshFS: createSampleFS });
-  for (const cmd of trainerCommands(trainer)) shell.register(cmd);
+  const trainer = new Trainer({ shell, tracks, freshFS: createSampleFS });
+  for (const cmd of trainerCommands(trainer, createMors(() => 0))) shell.register(cmd);
   return { shell, trainer };
 }
 
 describe("practice commands", () => {
-  it("task shows the current exercise", () => {
-    const { shell, trainer } = make();
-    const text = shell.run("task").stdout;
-    expect(text).toContain(`Task 1 of ${challenges.length}`);
-    expect(text).toContain(trainer.current.title);
-    expect(text).toContain(trainer.current.task);
-  });
-
-  it("task N jumps to another exercise", () => {
-    const { shell, trainer } = make();
-    expect(shell.run("task 5").stdout).toContain("Task 5 of");
-    expect(trainer.current.id).toBe(challenges[4]!.id);
-    expect(shell.run("task 999").stderr).toMatch(/between 1 and/);
-  });
-
-  it("hint and answer reveal help", () => {
-    const { shell, trainer } = make();
-    expect(shell.run("hint").stdout).toContain(trainer.current.hint);
-    expect(shell.run("answer").stdout).toContain(trainer.current.solution[0]!);
-  });
-
-  it("next refuses until solved, skip always moves on", () => {
-    const { shell, trainer } = make();
-    expect(shell.run("next").stderr).toMatch(/not finished/);
-    expect(shell.run("skip").stdout).toContain("Task 2 of");
-    trainer.afterCommand(trainer.current.solution[0]!, shell.run(trainer.current.solution[0]!));
-    expect(shell.run("next").stdout).toContain("Task 3 of");
-  });
-
-  it("tasks lists everything with completion marks", () => {
+  it("only registers hint, skip and mors", () => {
     const { shell } = make();
-    const text = shell.run("tasks").stdout;
-    expect(text).toContain(challenges[0]!.title);
-    expect(text).toContain("[ ]");
+    const names = shell.listCommands().filter((c) => c.category === "Practice").map((c) => c.name);
+    expect(names).toEqual(["hint", "skip", "mors"]);
+    for (const gone of ["task", "tasks", "answer", "next", "progress", "reset"]) expect(shell.getCommand(gone)).toBeUndefined();
   });
 
-  it("progress summarises by topic", () => {
-    const { shell } = make();
-    const text = shell.run("progress").stdout;
-    expect(text).toMatch(/0 of \d+ tasks done/);
-    expect(text).toContain("Navigation");
+  it("hint and mors help give the current challenge's hint, or a nudge to pick a track", () => {
+    const { shell, trainer } = make();
+    expect(shell.run("hint").stdout).toMatch(/track/i);
+    trainer.selectTrack("navigation");
+    expect(shell.run("hint").stdout).toContain(trainer.current!.hint);
+    expect(shell.run("mors help").stdout).toContain(trainer.current!.hint);
   });
 
-  it("reset restores the sandbox", () => {
-    const { shell } = make();
-    shell.run("rm notes.txt");
-    expect(shell.run("reset").stdout).toMatch(/reset/i);
-    expect(shell.fs.exists("/home/user/notes.txt")).toBe(true);
+  it("skip moves on within the track without printing the instructions", () => {
+    const { shell, trainer } = make();
+    trainer.selectTrack("navigation");
+    const second = trainer.track!.challenges[1]!;
+    const result = shell.run("skip");
+    expect(trainer.current?.id).toBe(second.id);
+    expect(result.stdout).toContain(second.title);
+    expect(result.stdout).not.toContain(second.task);
+    trainer.goTo(trainer.track!.challenges.length - 1);
+    expect(shell.run("skip").stdout).toMatch(/last/i);
+    trainer.leaveTrack();
+    expect(shell.run("skip").stderr).toMatch(/track/i);
+  });
+
+  it("mors introduces himself and tells the story", () => {
+    const { shell, trainer } = make();
+    expect(shell.run("mors").stdout).toMatch(/Mors/);
+    expect(shell.run("mors story").stdout).toMatch(/track/i);
+    trainer.selectTrack("git");
+    const story = shell.run("mors story").stdout;
+    expect(story).toContain(trainer.track!.story);
+    expect(story).toContain(trainer.current!.story);
+    expect(shell.run("mors dance").stderr).toMatch(/mors help/);
   });
 });
