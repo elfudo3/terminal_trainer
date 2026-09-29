@@ -1,4 +1,5 @@
 /** Entry point: styles, storage guard, native bridge, then the app. */
+import "@terminal-trainer/ui/theme.css";
 import "@terminal-trainer/ui/terminal.css";
 import "./styles/app.css";
 import { createApp } from "./app";

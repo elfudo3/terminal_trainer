@@ -1,13 +1,16 @@
 /**
- * Settings as a bottom sheet: terminal font size, reset progress (with an
- * inline confirmation instead of a native dialog), and app info.
+ * Settings as a bottom sheet: the signed-in profile, terminal text size,
+ * reset progress (inline confirmation, no native dialog) and app info.
  */
+import type { Profile } from "@terminal-trainer/core";
 import type { FontSize, Preferences } from "../preferences";
 
 export interface SettingsSheetOptions {
   prefs: Preferences;
+  profile: Profile;
   onFontSize: (size: FontSize) => void;
   onResetProgress: () => void;
+  onSignOut: () => void;
   version: string;
 }
 
@@ -27,6 +30,12 @@ export function createSettingsSheet(root: HTMLElement, opts: SettingsSheetOption
       <div class="sheet-handle" aria-hidden="true"></div>
       <h2 id="settings-title">Settings</h2>
 
+      <div class="settings-profile">
+        <span class="avatar" aria-hidden="true"></span>
+        <span class="settings-profile-name"></span>
+        <button type="button" class="btn btn-sm sign-out">Sign out</button>
+      </div>
+
       <h3>Terminal text size</h3>
       <div class="segmented" role="group" aria-label="Terminal text size">
         <button type="button" data-size="small">Small</button>
@@ -37,13 +46,13 @@ export function createSettingsSheet(root: HTMLElement, opts: SettingsSheetOption
       <h3>Progress</h3>
       <button type="button" class="btn btn-danger reset-button">Reset progress…</button>
       <div class="reset-confirm-row" hidden>
-        <p>This forgets every completed task. Continue?</p>
+        <p>This forgets every completed challenge for this profile. Continue?</p>
         <button type="button" class="btn btn-danger reset-confirm">Yes, reset</button>
         <button type="button" class="btn reset-cancel">Cancel</button>
       </div>
 
       <h3>About</h3>
-      <p class="about">Terminal Trainer <span class="version"></span> · a simulated Linux shell for practising commands. Nothing you type here touches your device.</p>
+      <p class="about">Terminal Trainer <span class="version"></span> · a simulated Linux shell for practising commands, with Mors the Wizard for company. Nothing you type here touches your device.</p>
 
       <button type="button" class="btn sheet-close">Done</button>
     </div>`;
@@ -53,6 +62,12 @@ export function createSettingsSheet(root: HTMLElement, opts: SettingsSheetOption
   const sheet = element.querySelector<HTMLElement>(".sheet")!;
   const confirmRow = element.querySelector<HTMLElement>(".reset-confirm-row")!;
   element.querySelector(".version")!.textContent = opts.version;
+  element.querySelector(".settings-profile .avatar")!.textContent = opts.profile.sigil;
+  element.querySelector(".settings-profile-name")!.textContent = opts.profile.name;
+  element.querySelector(".sign-out")!.addEventListener("click", () => {
+    close();
+    opts.onSignOut();
+  });
 
   const sizeButtons = [...element.querySelectorAll<HTMLButtonElement>("[data-size]")];
   const showSize = (size: FontSize) => {

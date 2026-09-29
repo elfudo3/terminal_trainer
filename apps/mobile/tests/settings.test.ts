@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { SIGILS } from "@terminal-trainer/core";
 import { DEFAULT_PREFERENCES } from "../src/preferences";
 import { createSettingsSheet } from "../src/screens/settings";
 
@@ -6,8 +7,10 @@ function make() {
   document.body.innerHTML = '<div id="root"></div>';
   const onFontSize = vi.fn();
   const onResetProgress = vi.fn();
-  const sheet = createSettingsSheet(document.getElementById("root")!, { prefs: { ...DEFAULT_PREFERENCES }, onFontSize, onResetProgress, version: "1.2.3" });
-  return { sheet, onFontSize, onResetProgress };
+  const onSignOut = vi.fn();
+  const profile = { id: "p_1", name: "Fudo", sigil: SIGILS[2]!, createdAt: 1, lastSeenAt: 1 };
+  const sheet = createSettingsSheet(document.getElementById("root")!, { prefs: { ...DEFAULT_PREFERENCES }, profile, onFontSize, onResetProgress, onSignOut, version: "1.2.3" });
+  return { sheet, onFontSize, onResetProgress, onSignOut };
 }
 
 describe("settings sheet", () => {
@@ -21,6 +24,16 @@ describe("settings sheet", () => {
     expect(sheet.isOpen()).toBe(false);
     sheet.open();
     sheet.element.querySelector<HTMLElement>(".sheet-backdrop")!.click();
+    expect(sheet.isOpen()).toBe(false);
+  });
+
+  it("shows the profile and signs out", () => {
+    const { sheet, onSignOut } = make();
+    sheet.open();
+    expect(sheet.element.querySelector(".settings-profile-name")?.textContent).toBe("Fudo");
+    expect(sheet.element.querySelector(".settings-profile .avatar")?.textContent).toBe(SIGILS[2]);
+    sheet.element.querySelector<HTMLButtonElement>(".sign-out")!.click();
+    expect(onSignOut).toHaveBeenCalled();
     expect(sheet.isOpen()).toBe(false);
   });
 

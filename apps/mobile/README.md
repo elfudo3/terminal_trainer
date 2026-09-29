@@ -1,11 +1,11 @@
 # Terminal Trainer — mobile app
 
-The iOS and Android version of Terminal Trainer. It is the same simulated shell and the same 62 exercises as the desktop app, with a touch-first interface: a collapsible task card, a key bar for the characters phone keyboards hide (`|`, `-`, `/`, `~`, `*`, `>`, `$`), tap-to-insert suggestions, and a searchable command reference.
+The iOS and Android version of Terminal Trainer. It is the same simulated shell, the same eight story tracks and the same Mors as the desktop app, with a touch-first interface: sign in, a Home tab with the track menu, a collapsible challenge card with Mors's comments, a key bar for the characters phone keyboards hide (`|`, `-`, `/`, `~`, `*`, `>`, `$`), tap-to-insert suggestions, and a searchable command reference.
 
 <p>
-  <img src="docs/practice.png" width="240" alt="Practice screen" />
+  <img src="docs/home.png" width="240" alt="Home tab with Mors's welcome and the track menu" />
+  <img src="docs/practice.png" width="240" alt="Practice screen with the challenge card" />
   <img src="docs/keyboard.png" width="240" alt="Practice screen with the keyboard open" />
-  <img src="docs/learn.png" width="240" alt="Learn screen" />
 </p>
 
 The app is built with [Capacitor](https://capacitorjs.com): the UI is TypeScript in `src/`, and `ios/` and `android/` are real Xcode and Android Studio projects that wrap it. Nothing in the app talks to a network.
@@ -45,7 +45,7 @@ Re-run `npm run mobile:sync` after any change to `src/`. The native projects nev
 npm test -w apps/mobile
 ```
 
-Screens and components are tested with jsdom: tabs, key bar, suggestions, task card, each screen, settings, and an integration test of the whole app (solving a task buzzes and toasts, the back button, keyboard state, persistence). Shell and exercise logic are tested in `packages/core`.
+Screens and components are tested with jsdom: tabs, key bar, suggestions, task card, each screen, settings, and an integration test of the whole app (sign-in, opening a track, solving a challenge buzzes and toasts and makes Mors comment, the back button, keyboard state, per-profile persistence). Shell, git, Mors and challenge logic are tested in `packages/core`.
 
 CI (`.github/workflows/ci.yml`) additionally compiles the Android project into a debug APK (downloadable from the workflow run's artifacts) and builds the iOS project for the simulator on every push.
 
@@ -64,21 +64,21 @@ CI (`.github/workflows/ci.yml`) additionally compiles the Android project into a
 ```
 src/
   main.ts                entry point: styles, storage guard, native bridge, app
-  app.ts                 assembles screens, tabs and settings; cross-screen glue
+  app.ts                 sign-in gate, then a session per profile: screens, tabs, settings, glue
   native.ts              the only file that imports Capacitor plugins (with a no-op fallback)
-  preferences.ts         font size and card state, persisted
+  preferences.ts         font size and card state, persisted per profile
   components/
     tabs.ts              bottom tab bar, one panel visible at a time
     keybar.ts            on-screen shell keys + hide-keyboard button
     suggestions.ts       tap-to-insert chips built on Tab completion
-    task-card.ts         the current exercise, collapsible
+    task-card.ts         the current challenge: story, task, Mors, actions; collapsible
     toast.ts             brief "Solved!" message
   screens/
-    practice.ts          task card + terminal + suggestions + key bar; runs commands
-    tasks.ts             progress and the exercise list
+    home.ts              Mors's welcome, overall progress, the track menu
+    practice.ts          challenge card + terminal + suggestions + key bar; runs commands
     learn.ts             searchable command reference
-    settings.ts          bottom sheet: text size, reset progress, about
-  styles/app.css         tokens, layout, components
+    settings.ts          bottom sheet: profile and sign out, text size, reset progress, about
+  styles/app.css         phone layout on top of the shared theme (packages/ui/theme.css)
 tests/                   jsdom tests, one file per component or screen
 public/                  web manifest and icons for the browser version
 resources/               source images for native icons and splash screens

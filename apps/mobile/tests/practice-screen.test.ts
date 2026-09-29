@@ -7,37 +7,51 @@ function make() {
   const fixture = makeFixture();
   const onSolved = vi.fn();
   const onPrefsChange = vi.fn();
-  const screen = createPracticeScreen(fixture.root, { ...fixture, prefs: { ...DEFAULT_PREFERENCES }, onSolved, onPrefsChange });
+  const onAllTracks = vi.fn();
+  const screen = createPracticeScreen(fixture.root, { ...fixture, prefs: { ...DEFAULT_PREFERENCES }, typing: 0, onSolved, onPrefsChange, onAllTracks });
   const type = (text: string) => {
     screen.terminal.input.value = text;
     screen.terminal.input.dispatchEvent(new Event("input", { bubbles: true }));
   };
-  return { ...fixture, screen, onSolved, onPrefsChange, type };
+  const output = () => screen.element.querySelector(".terminal-output")!.textContent ?? "";
+  return { ...fixture, screen, onSolved, onPrefsChange, onAllTracks, type, output };
 }
 
 describe("practice screen", () => {
-  it("runs commands, prints output and checks the task", () => {
-    const { screen, trainer, onSolved, type } = make();
+  it("starts in free play with a nudge to pick a track and a plain terminal", () => {
+    const { screen, output, onAllTracks } = make();
+    expect(screen.element.querySelector<HTMLElement>(".no-track")!.hidden).toBe(false);
+    expect(screen.card.element.hidden).toBe(true);
+    expect(output()).toMatch(/Welcome to sandbox/);
+    screen.element.querySelector<HTMLButtonElement>(".no-track button")!.click();
+    expect(onAllTracks).toHaveBeenCalled();
+  });
+
+  it("runs commands, prints output, and checks the open challenge without echoing its text", () => {
+    const { screen, trainer, onSolved, type, output } = make();
+    trainer.selectTrack("basics");
+    expect(screen.element.querySelector<HTMLElement>(".no-track")!.hidden).toBe(true);
+    expect(output()).not.toContain("Create a file named a.");
     type("pwd");
     screen.terminal.sendKey("Enter");
-    const output = screen.element.querySelector(".terminal-output")!.textContent;
-    expect(output).toContain("/home/user");
+    expect(output()).toContain("/home/user");
     expect(onSolved).not.toHaveBeenCalled();
     type("touch a");
     screen.terminal.sendKey("Enter");
     expect(onSolved).toHaveBeenCalledTimes(1);
     expect(trainer.solved).toBe(true);
-    expect(screen.element.querySelector(".terminal-output")!.textContent).toMatch(/Task complete/);
+    expect(screen.card.element.querySelector(".mors-text")?.textContent).toContain("a exists now");
+    expect(output()).not.toContain("exists now");
   });
 
   it("clears the screen when asked and prints errors", () => {
-    const { screen, type } = make();
+    const { screen, type, output } = make();
     type("nope");
     screen.terminal.sendKey("Enter");
     expect(screen.element.querySelector(".line-stderr")?.textContent).toContain("command not found");
     type("clear");
     screen.terminal.sendKey("Enter");
-    expect(screen.element.querySelector(".terminal-output")!.textContent).toBe("");
+    expect(output()).toBe("");
   });
 
   it("updates suggestions while typing and applies a tapped chip", () => {
@@ -53,7 +67,8 @@ describe("practice screen", () => {
   });
 
   it("has a key bar wired to the terminal and a collapsible task card", () => {
-    const { screen, onPrefsChange } = make();
+    const { screen, trainer, onPrefsChange } = make();
+    trainer.selectTrack("basics");
     [...screen.element.querySelectorAll<HTMLButtonElement>(".keybar-key")].find((b) => b.textContent === "~")!.click();
     expect(screen.terminal.input.value).toBe("~");
     screen.element.querySelector<HTMLButtonElement>(".task-card-header")!.click();
@@ -61,8 +76,9 @@ describe("practice screen", () => {
   });
 
   it("collapses the task card while the keyboard is open, without touching the saved preference", () => {
-    const { screen, onPrefsChange } = make();
-    const card = screen.element.querySelector(".task-card")!;
+    const { screen, trainer, onPrefsChange } = make();
+    trainer.selectTrack("basics");
+    const card = screen.card.element;
     screen.setKeyboardOpen(true);
     expect(card.classList.contains("collapsed")).toBe(true);
     expect(onPrefsChange).not.toHaveBeenCalled();

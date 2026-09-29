@@ -1,19 +1,30 @@
-/** Shared fixture for mobile screen tests: a shell on the sample filesystem plus a trainer over a tiny task list. */
-import { Shell, Trainer, createSampleFS, trainerCommands, type Challenge } from "@terminal-trainer/core";
+/** Shared fixture for mobile screen tests: a shell on the sample filesystem plus a trainer over a tiny track list. */
+import { Shell, Trainer, createMors, createSampleFS, trainerCommands, type Challenge, type Track } from "@terminal-trainer/core";
 
-export const tinyChallenges: Challenge[] = [
-  { id: "a", topic: "Basics", title: "Make a", task: "Create a file named a.", hint: "Use touch.", solution: ["touch a"], check: ({ shell }) => shell.fs.exists("/home/user/a") },
-  { id: "b", topic: "Basics", title: "Make b", task: "Create b.", hint: "touch b", solution: ["touch b"], check: ({ shell }) => shell.fs.exists("/home/user/b") },
-  { id: "c", topic: "Pipes", title: "Say hi", task: "Print hi.", hint: "echo", solution: ["echo hi"], check: ({ result }) => result.stdout === "hi\n" },
+const ch = (id: string, file: string): Challenge => ({
+  id,
+  title: `Make ${file}`,
+  story: `Mors needs ${file}.`,
+  task: `Create a file named ${file}.`,
+  hint: `touch ${file}`,
+  solution: [`touch ${file}`],
+  lore: `${file} exists now, which is more than most spells manage.`,
+  check: ({ shell }) => shell.fs.exists(`/home/user/${file}`),
+});
+
+export const tinyTracks: Track[] = [
+  { id: "basics", title: "Basics", tagline: "Files", story: "Basics begin.", commands: ["touch"], challenges: [ch("a", "a"), ch("b", "b")] },
+  { id: "pipes", title: "Pipes", tagline: "Pipes", story: "Pipes begin.", commands: ["|"], challenges: [{ ...ch("c", "c"), check: ({ result }) => result.stdout === "hi\n", solution: ["echo hi"], task: "Print hi." }] },
 ];
 
-export function makeFixture(challenges: Challenge[] = tinyChallenges) {
+export function makeFixture(tracks: Track[] = tinyTracks) {
   document.body.innerHTML = '<div id="root"></div>';
   const root = document.getElementById("root")!;
   const shell = new Shell({ fs: createSampleFS() });
-  const trainer = new Trainer({ shell, challenges, freshFS: createSampleFS });
-  for (const cmd of trainerCommands(trainer)) shell.register(cmd);
-  return { root, shell, trainer };
+  const trainer = new Trainer({ shell, tracks, freshFS: createSampleFS });
+  const mors = createMors(() => 0);
+  for (const cmd of trainerCommands(trainer, mors)) shell.register(cmd);
+  return { root, shell, trainer, mors };
 }
 
 export function memoryStorage() {

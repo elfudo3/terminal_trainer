@@ -146,6 +146,19 @@ describe("Trainer: tracks", () => {
     expect(JSON.parse(storage.getItem(STORAGE_KEY)!)).toEqual({ completed: [], track: null, index: 0 });
   });
 
+  it("resumes at the first unfinished challenge when the saved one was solved without pressing next", () => {
+    const storage = memoryStorage();
+    const first = make(storage);
+    first.trainer.selectTrack("alpha");
+    first.run("touch a1");
+    const second = make(storage);
+    expect(second.trainer.current?.id).toBe("a2");
+    // But an unsolved saved position is kept exactly.
+    second.trainer.selectTrack("beta");
+    second.trainer.goTo(1);
+    expect(make(storage).trainer.current?.id).toBe("b2");
+  });
+
   it("survives corrupt storage and unknown saved tracks", () => {
     const storage = memoryStorage();
     storage.setItem(STORAGE_KEY, "{not json");

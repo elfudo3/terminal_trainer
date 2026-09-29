@@ -39,6 +39,7 @@ describe("Mors's voice", () => {
     expect(mors.trackIntro(track)).toContain("The chamber awaits.");
     expect(mors.about()).toMatch(/mors help/);
     expect(mors.noChallenge()).toMatch(/track/i);
+    expect(mors.menu()).toMatch(/track|door|experiment/i);
   });
 
   it("varies flourishes with the random source but stays short", () => {

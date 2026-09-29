@@ -542,9 +542,14 @@ kbd {
   gap: 6px;
 }
 
+@media (max-width: 480px) {
+  .sigil-options {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
 .sigil-option {
-  aspect-ratio: 1;
-  min-height: 40px;
+  min-height: 44px;
   display: grid;
   place-items: center;
   border: 1px solid var(--border);

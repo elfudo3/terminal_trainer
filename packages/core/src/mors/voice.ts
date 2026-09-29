@@ -20,6 +20,8 @@ export interface MorsVoice {
   noChallenge(): string;
   /** `mors` with no arguments. */
   about(): string;
+  /** Shown on the track menu after leaving a track. */
+  menu(): string;
   trackDone(track: Track): string;
 }
 
@@ -50,6 +52,12 @@ const TRACK_DONE = [
   "That's the whole track, {name}. Not bad for someone who is, by my readings, still alive.",
   "Track complete. Somewhere a thousand years from now, a very dead wizard is proud of you.",
   "Done. Every command in that track is now a threshold you can step through without thinking.",
+];
+
+const MENU_LINES = [
+  "Pick a track. Any order; they don't depend on each other, and neither do I.",
+  "The tracks are doors. Open whichever one you like; they all lead somewhere useful.",
+  "Choose your next experiment. I'll be in /opt/mors if you need me.",
 ];
 
 const HINT_OPENERS = ["Hint: ", "Between us: ", "If I were alive and typing: ", "Small nudge: "];
@@ -84,5 +92,7 @@ export function createMors(random: () => number = Math.random): MorsVoice {
       ].join("\n"),
 
     trackDone: (track) => fill(pick(TRACK_DONE), track.title),
+
+    menu: () => pick(MENU_LINES),
   };
 }

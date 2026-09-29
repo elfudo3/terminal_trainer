@@ -59,8 +59,13 @@ export class Trainer {
     this.storage = opts.storage;
     const saved = this.load();
     for (const id of saved.completed) this.completed.add(id);
-    if (saved.track !== null && this.tracks.some((t) => t.id === saved.track)) this.selectTrack(saved.track, saved.index);
-    else this.leaveTrack();
+    const savedTrack = this.tracks.find((t) => t.id === saved.track);
+    if (savedTrack) {
+      // Resume where the user was, unless that challenge is already solved:
+      // then the first unfinished one is the natural place to continue.
+      const at = savedTrack.challenges[saved.index];
+      this.selectTrack(savedTrack.id, at && !this.completed.has(at.id) ? saved.index : undefined);
+    } else this.leaveTrack();
   }
 
   // ---- State -------------------------------------------------------------

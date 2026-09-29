@@ -1,365 +1,293 @@
-/* Terminal Trainer styles. Tokens first, then layout, terminal, panel. */
+/* Desktop layout. Tokens and components come from @terminal-trainer/ui/theme.css. */
 
-:root {
-  --bg: #0b0f14;
-  --bg-panel: #121821;
-  --bg-terminal: #05080c;
-  --border: #23303f;
-  --text: #e6edf3;
-  --text-muted: #8b98a8;
-  --prompt: #7ee787;
-  --accent: #58a6ff;
-  --accent-strong: #1f6feb;
-  --error: #ff7b72;
-  --success: #7ee787;
-  --info: #8b98a8;
-  --focus: #f0b429;
-  --radius: 10px;
-  --font-mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
-  --font-ui: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  color-scheme: dark;
-}
-
-/* Light mode adapts the page chrome and panel; the terminal itself stays dark, as terminals do. */
-@media (prefers-color-scheme: light) {
-  :root {
-    --bg: #f6f8fa;
-    --bg-panel: #ffffff;
-    --border: #d0d7de;
-    --text: #1f2328;
-    --text-muted: #57606a;
-    --accent: #0969da;
-    --accent-strong: #0969da;
-    color-scheme: light;
-  }
-}
-
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
-
-html,
-body {
-  height: 100%;
-  margin: 0;
-}
-
-body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: var(--font-ui);
-  line-height: 1.5;
-  -webkit-font-smoothing: antialiased;
-}
-
-/* ---- Layout ------------------------------------------------------------ */
-
-/* Small screens: one column filling the viewport. The task card sits on top
-   and the terminal takes whatever height is left, scrolling internally so the
-   input line is always visible. dvh tracks the on-screen keyboard. */
 .app {
   display: flex;
   flex-direction: column;
-  height: 100dvh;
-  padding: 12px;
-  gap: 10px;
-  max-width: 1400px;
-  margin: 0 auto;
+  min-height: 100dvh;
 }
 
-.app-header {
+/* ---- App bar ------------------------------------------------------------- */
+
+.appbar {
   display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 4px 16px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--bg) 80%, transparent);
+  backdrop-filter: blur(8px);
 }
 
-.app-title {
-  margin: 0;
-  font-size: 1.25rem;
-  font-weight: 650;
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 700;
 }
 
-.app-logo {
-  font-family: var(--font-mono);
+.brand-logo {
+  font-family: var(--mono);
   color: var(--prompt);
 }
 
-.app-tagline {
-  margin: 0;
-  color: var(--text-muted);
-  font-size: 0.95rem;
-}
-
-@media (max-width: 899px) {
-  .app-tagline {
-    display: none;
-  }
-}
-
-.app-main {
+.profile-chip {
   display: flex;
-  flex-direction: column;
+  align-items: center;
   gap: 10px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.avatar-sm {
+  width: 30px;
+  height: 30px;
+  font-size: 14px;
+}
+
+/* ---- Views --------------------------------------------------------------- */
+
+.views {
   flex: 1;
   min-height: 0;
+  display: flex;
 }
 
-.panel-root {
+.view {
+  flex: 1;
+  min-width: 0;
+}
+
+.view-home {
+  overflow-y: auto;
+}
+
+.home-inner {
+  max-width: 1060px;
+  margin: 0 auto;
+  padding: 32px 20px 48px;
   display: flex;
-  flex: none;
-  order: -1; /* task card above the terminal */
-  max-height: 45%;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.home-mors .mors-text {
+  font-size: 16px;
+}
+
+.home-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.home-head h2 {
+  font-size: 24px;
+  margin-top: 2px;
+}
+
+.overall-progress {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+/* ---- Practice ------------------------------------------------------------ */
+
+.view-practice {
+  display: flex;
+  padding: 16px 20px;
+}
+
+.practice-grid {
+  flex: 1;
   min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 380px;
+  gap: 16px;
+  height: calc(100dvh - 140px);
+}
+
+@media (max-width: 960px) {
+  .practice-grid {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    height: auto;
+  }
+
+  .panel-root {
+    order: -1;
+  }
+
+  .terminal-root {
+    height: 60vh;
+  }
 }
 
 .terminal-root {
   display: flex;
-  flex: 1;
-  min-height: 180px;
+  min-height: 0;
 }
-
-/* Wide screens: terminal and task card side by side, task card on the right. */
-@media (min-width: 900px) {
-  .app {
-    padding: 16px;
-    gap: 12px;
-  }
-
-  .app-main {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 340px;
-    gap: 12px;
-  }
-
-  .panel-root {
-    order: 0;
-    max-height: none;
-  }
-
-  .terminal-root {
-    min-height: 0;
-  }
-}
-
-/* Very short viewports (landscape phones): let the page scroll instead of squashing. */
-@media (max-height: 500px) {
-  .app {
-    height: auto;
-    min-height: 100dvh;
-  }
-
-  .terminal-root {
-    min-height: 60vh;
-  }
-}
-
-.app-footer {
-  color: var(--text-muted);
-  font-size: 0.85rem;
-}
-
-kbd {
-  font-family: var(--font-mono);
-  font-size: 0.8em;
-  padding: 1px 5px;
-  border: 1px solid var(--border);
-  border-bottom-width: 2px;
-  border-radius: 4px;
-  background: var(--bg-panel);
-}
-
-code {
-  font-family: var(--font-mono);
-  font-size: 0.9em;
-}
-
-/* ---- Terminal (widget styles live in @terminal-trainer/ui) ------------ */
 
 .terminal {
   border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-lg);
   cursor: text;
+  box-shadow: var(--shadow);
 }
 
 .terminal:focus-within {
-  border-color: var(--accent);
+  border-color: var(--border-strong);
 }
 
-/* ---- Practice panel ---------------------------------------------------- */
+.panel-root {
+  min-height: 0;
+  display: flex;
+}
 
 .panel {
   flex: 1;
+  min-height: 0;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 14px;
-  padding: 16px;
-  background: var(--bg-panel);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  overflow-y: auto;
+  padding-right: 2px;
 }
 
-.panel-header {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: center;
-  gap: 6px 10px;
-}
-
-.panel-title {
-  margin: 0;
-  font-size: 0.85rem;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-}
-
-.progress-label {
-  font-size: 0.85rem;
-  color: var(--text-muted);
-  text-align: right;
-}
-
-.progress {
-  grid-column: 1 / -1;
-  height: 6px;
-  background: var(--border);
-  border-radius: 3px;
-  overflow: hidden;
-}
-
-.progress-bar {
-  height: 100%;
-  width: 0;
-  background: var(--success);
-  transition: width 300ms ease;
-}
-
-.task-meta {
-  margin: 0;
-  font-size: 0.8rem;
-  color: var(--text-muted);
-}
-
-.task-title {
-  margin: 2px 0 6px;
-  font-size: 1.15rem;
-}
-
-.task-text {
-  margin: 0;
-}
-
-.task-status {
-  margin: 8px 0 0;
-  min-height: 1.5em;
-  color: var(--success);
-  font-weight: 600;
-}
-
-.task-status:empty {
-  display: none;
-}
-
-.panel-actions {
+.panel-track-head {
   display: flex;
-  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
   gap: 8px;
 }
 
-.btn {
-  padding: 7px 12px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: transparent;
-  color: var(--text);
-  font: inherit;
-  font-size: 0.9rem;
-  cursor: pointer;
-  min-height: 36px;
+.track-name {
+  font-size: 20px;
+  margin-top: 2px;
 }
 
-.btn:hover {
-  border-color: var(--accent);
+.panel-track-progress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
 }
 
-.btn-primary {
+.panel-track-progress .progress {
+  flex: 1;
+}
+
+.panel-track-progress .track-count {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.challenge {
+  padding: 18px;
+  transition:
+    border-color 200ms ease,
+    box-shadow 200ms ease;
+}
+
+.panel.solved .challenge {
+  border-color: var(--success);
+  box-shadow: var(--glow-success);
+}
+
+.challenge-title {
+  font-size: 19px;
+  margin: 4px 0 10px;
+}
+
+.challenge-status {
+  margin-top: 10px;
+  min-height: 1.4em;
+  color: var(--success);
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.challenge-status:empty {
+  display: none;
+}
+
+.challenge-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.challenge-actions .btn-primary {
   margin-left: auto;
-  background: var(--accent-strong);
-  border-color: var(--accent-strong);
-  color: #fff;
 }
 
-.btn:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-
-.all-tasks summary {
+.challenge-list summary {
   cursor: pointer;
-  color: var(--text-muted);
-  font-size: 0.9rem;
+  color: var(--muted);
+  font-size: 14px;
 }
 
-.task-list {
+.challenge-rows {
   list-style: none;
   margin: 8px 0 0;
   padding: 0;
-  font-size: 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
-.task-list-topic {
-  margin: 10px 0 4px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-}
-
-.task-link {
+.challenge-row {
   width: 100%;
-  text-align: left;
-  padding: 5px 8px;
-  border: 0;
-  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 10px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
   background: transparent;
-  color: var(--text);
-  font: inherit;
-  cursor: pointer;
+  text-align: left;
+  font-size: 14px;
 }
 
-.task-link:hover {
-  background: var(--border);
+.challenge-row:hover {
+  background: var(--surface-2);
 }
 
-.task-list-item.done .task-link::before {
-  content: "✓ ";
+.challenge-row.current {
+  border-color: var(--accent);
+  background: var(--surface-2);
+}
+
+.challenge-row-num {
+  width: 22px;
+  color: var(--faint);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.challenge-row-title {
+  flex: 1;
+}
+
+.challenge-row-check {
   color: var(--success);
+  opacity: 0;
 }
 
-.task-list-item.current .task-link {
-  background: color-mix(in srgb, var(--accent) 18%, transparent);
-  font-weight: 600;
+.challenge-row.done .challenge-row-check {
+  opacity: 1;
 }
 
-/* ---- Accessibility ----------------------------------------------------- */
+/* ---- Footer -------------------------------------------------------------- */
 
-:focus-visible {
-  outline: 2px solid var(--focus);
-  outline-offset: 2px;
-}
-
-.terminal-input:focus-visible {
-  outline: none; /* the terminal border highlights instead */
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .progress-bar {
-    transition: none;
-  }
+.app-footer {
+  padding: 10px 20px;
+  border-top: 1px solid var(--border);
+  color: var(--faint);
+  font-size: 12.5px;
 }

@@ -1,9 +1,9 @@
 /**
- * The main screen: task card, terminal, suggestion chips and key bar.
- * It owns running commands (shell → output → trainer check); the app
- * only listens for "solved" to add haptics and a toast.
+ * The main screen: task card (with Mors), terminal, suggestion chips and
+ * key bar. It owns running commands (shell → output → trainer check).
+ * With no track open it is a free-play terminal with a nudge to pick one.
  */
-import type { Shell, Trainer } from "@terminal-trainer/core";
+import type { MorsVoice, Shell, Trainer } from "@terminal-trainer/core";
 import { complete } from "@terminal-trainer/core";
 import { createTerminal, type TerminalView } from "@terminal-trainer/ui";
 import { createKeyBar } from "../components/keybar";
@@ -14,16 +14,19 @@ import { FONT_SIZE_PX, type FontSize, type Preferences } from "../preferences";
 export interface PracticeScreenDeps {
   shell: Shell;
   trainer: Trainer;
+  mors: MorsVoice;
   prefs: Preferences;
+  typing?: number;
   onPrefsChange: (prefs: Preferences) => void;
   onSolved?: () => void;
+  onAllTracks: () => void;
 }
 
 export interface PracticeScreen {
   element: HTMLElement;
   terminal: TerminalView;
   card: TaskCard;
-  /** Runs a line as if typed (used by the task card and other screens). */
+  /** Runs a line as if typed. */
   run(line: string): void;
   /** Puts text on the input line, ready to edit or run (used by Learn's "Try it"). */
   setLine(text: string): void;
@@ -32,13 +35,22 @@ export interface PracticeScreen {
   setKeyboardOpen(open: boolean): void;
 }
 
+const MOTD = "Welcome to sandbox. Nothing you do here touches a real device.\nType  help  for commands, or  mors  to meet the wizard.\n";
+
 export function createPracticeScreen(root: HTMLElement, deps: PracticeScreenDeps): PracticeScreen {
-  const { shell, trainer } = deps;
+  const { shell, trainer, mors } = deps;
   const element = document.createElement("section");
   element.className = "screen practice";
   root.appendChild(element);
 
   const prefs = { ...deps.prefs };
+
+  // Nudge shown instead of the card while no track is open.
+  const noTrack = document.createElement("div");
+  noTrack.className = "no-track card";
+  noTrack.innerHTML = `<p>Free play: the sandbox is yours. Open a track to get challenges.</p><button type="button" class="btn btn-primary btn-sm">Choose a track</button>`;
+  noTrack.querySelector("button")!.addEventListener("click", () => deps.onAllTracks());
+  element.appendChild(noTrack);
 
   // The saved preference applies while the keyboard is closed. When it opens,
   // the card collapses to give the terminal room; expanding it again during
@@ -47,8 +59,10 @@ export function createPracticeScreen(root: HTMLElement, deps: PracticeScreenDeps
   let expandedWhileTyping = false;
   const applyCollapse = () => card.setCollapsed(keyboardOpen ? !expandedWhileTyping : prefs.taskCardCollapsed);
 
-  const card = createTaskCard(element, trainer, {
-    onCommand: (line) => run(line),
+  const card = createTaskCard(element, {
+    trainer,
+    mors,
+    typing: deps.typing,
     collapsed: prefs.taskCardCollapsed,
     onToggle: (collapsed) => {
       if (keyboardOpen) {
@@ -58,6 +72,7 @@ export function createPracticeScreen(root: HTMLElement, deps: PracticeScreenDeps
       prefs.taskCardCollapsed = collapsed;
       deps.onPrefsChange({ ...prefs });
     },
+    onAllTracks: deps.onAllTracks,
   });
 
   const setKeyboardOpen = (open: boolean) => {
@@ -84,8 +99,9 @@ export function createPracticeScreen(root: HTMLElement, deps: PracticeScreenDeps
       if (result.clear) terminal.clear();
       terminal.print(result.stdout);
       terminal.print(result.stderr, "stderr");
-      if (trainer.afterCommand(line, result) === "solved") {
-        terminal.print(trainer.finished ? "✓ Task complete! That was the last one. Well done!\n" : "✓ Task complete! Tap Next to continue.\n", "success");
+      const challenge = trainer.current;
+      if (trainer.afterCommand(line, result) === "solved" && challenge) {
+        void card.bubble.say(mors.solved(challenge, { trackDone: trainer.finished }));
         deps.onSolved?.();
       }
       refreshSuggestions();
@@ -104,7 +120,11 @@ export function createPracticeScreen(root: HTMLElement, deps: PracticeScreenDeps
   const refreshSuggestions = () => suggestions.update(suggestionsFor(shell, terminal.input.value));
   terminal.input.addEventListener("input", refreshSuggestions);
 
-  const run = (line: string) => terminal.submit(line);
+  const renderTrackState = () => {
+    noTrack.hidden = trainer.track !== null;
+  };
+  trainer.subscribe(renderTrackState);
+  renderTrackState();
 
   const setLine = (text: string) => {
     terminal.input.value = text;
@@ -119,10 +139,7 @@ export function createPracticeScreen(root: HTMLElement, deps: PracticeScreenDeps
 
   setFontSize(prefs.fontSize);
   refreshSuggestions();
-  terminal.print(
-    "Welcome! This is a simulated Linux shell: nothing here can harm a real device.\nYour task is shown above. Type  help  to list every command.\n",
-    "info",
-  );
+  terminal.print(MOTD, "info");
 
-  return { element, terminal, card, run, setLine, setFontSize, setKeyboardOpen };
+  return { element, terminal, card, run: (line) => terminal.submit(line), setLine, setFontSize, setKeyboardOpen };
 }

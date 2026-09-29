@@ -1,101 +1,139 @@
 /**
- * The practice panel beside the terminal: current task, progress and a list
- * of all tasks. Buttons do not touch the trainer directly; they send the
- * matching command (hint, skip, next...) through the terminal so the
- * transcript always shows what happened and typing works the same way.
+ * The practice panel beside the terminal: the open track, the current
+ * challenge's story and task, the action buttons, Mors's bubble and the
+ * list of challenges in the track. Instructions live here, never in the
+ * terminal.
  */
-import type { Trainer } from "@terminal-trainer/core";
+import type { MorsVoice, Trainer } from "@terminal-trainer/core";
+import { createMorsBubble, type MorsBubble } from "@terminal-trainer/ui";
 
 export interface PanelOptions {
-  /** Runs a command line in the terminal. */
-  onCommand: (line: string) => void;
+  trainer: Trainer;
+  mors: MorsVoice;
+  /** Milliseconds per typed character for Mors; 0 is instant. */
+  typing?: number;
+  onAllTracks: () => void;
 }
 
-export function createPanel(root: HTMLElement, trainer: Trainer, opts: PanelOptions): void {
-  root.innerHTML = `
-    <aside class="panel" aria-label="Practice">
-      <div class="panel-header">
-        <h2 class="panel-title">Practice</h2>
-        <div class="progress" role="progressbar" aria-valuemin="0" aria-valuenow="0" aria-valuemax="0" aria-label="Tasks completed">
-          <div class="progress-bar"></div>
+export interface Panel {
+  element: HTMLElement;
+  bubble: MorsBubble;
+  render(): void;
+}
+
+export function createPanel(root: HTMLElement, opts: PanelOptions): Panel {
+  const { trainer, mors } = opts;
+  const element = document.createElement("aside");
+  element.className = "panel";
+  element.setAttribute("aria-label", "Practice");
+  element.innerHTML = `
+    <div class="panel-track">
+      <div class="panel-track-head">
+        <div>
+          <p class="eyebrow">Track</p>
+          <h2 class="track-name"></h2>
         </div>
-        <span class="progress-label"></span>
+        <button type="button" class="btn btn-ghost btn-sm" data-action="all-tracks">‹ All tracks</button>
       </div>
-      <section class="task" aria-live="polite">
-        <p class="task-meta"></p>
-        <h3 class="task-title"></h3>
-        <p class="task-text"></p>
-        <p class="task-status"></p>
-      </section>
-      <div class="panel-actions">
-        <button type="button" class="btn" data-cmd="hint">Hint</button>
-        <button type="button" class="btn" data-cmd="answer">Answer</button>
-        <button type="button" class="btn" data-cmd="reset" title="Put the files back the way this task started">Reset files</button>
-        <button type="button" class="btn" data-cmd="skip">Skip</button>
-        <button type="button" class="btn btn-primary" data-cmd="next">Next →</button>
+      <div class="panel-track-progress">
+        <span class="progress" aria-hidden="true"><span class="progress-bar"></span></span>
+        <span class="track-count"></span>
       </div>
-      <details class="all-tasks">
-        <summary>All tasks</summary>
-        <ol class="task-list"></ol>
-      </details>
-    </aside>`;
+    </div>
+    <section class="challenge card" aria-live="polite">
+      <p class="eyebrow challenge-meta"></p>
+      <h3 class="challenge-title"></h3>
+      <p class="challenge-story"></p>
+      <p class="challenge-task"></p>
+      <div class="challenge-reveal challenge-answer" hidden><span>One way to do it:</span><code></code></div>
+      <p class="challenge-status" role="status"></p>
+      <div class="challenge-actions">
+        <button type="button" class="btn btn-sm" data-action="hint">Hint</button>
+        <button type="button" class="btn btn-sm" data-action="answer">Answer</button>
+        <button type="button" class="btn btn-sm" data-action="reset" title="Put the files back the way this challenge started">Reset files</button>
+        <button type="button" class="btn btn-sm" data-action="skip">Skip</button>
+        <button type="button" class="btn btn-primary btn-sm" data-action="next">Next →</button>
+      </div>
+    </section>
+    <div class="panel-mors"></div>
+    <details class="challenge-list">
+      <summary>All challenges in this track</summary>
+      <ol class="challenge-rows"></ol>
+    </details>`;
+  root.appendChild(element);
 
-  const q = <T extends HTMLElement>(selector: string) => root.querySelector<T>(selector)!;
-  const progress = q<HTMLElement>(".progress");
-  const bar = q<HTMLElement>(".progress-bar");
-  const label = q<HTMLElement>(".progress-label");
-  const meta = q<HTMLElement>(".task-meta");
-  const title = q<HTMLElement>(".task-title");
-  const text = q<HTMLElement>(".task-text");
-  const status = q<HTMLElement>(".task-status");
-  const nextButton = q<HTMLButtonElement>('[data-cmd="next"]');
-  const list = q<HTMLOListElement>(".task-list");
+  const q = <T extends HTMLElement>(selector: string) => element.querySelector<T>(selector)!;
+  const bubble = createMorsBubble(q(".panel-mors"), { speed: opts.typing ?? 16 });
+  const answer = q<HTMLElement>(".challenge-answer");
+  const status = q(".challenge-status");
+  const next = q<HTMLButtonElement>('[data-action="next"]');
+  const rows = q<HTMLOListElement>(".challenge-rows");
 
-  for (const button of root.querySelectorAll<HTMLButtonElement>("[data-cmd]")) {
-    button.addEventListener("click", () => opts.onCommand(button.dataset.cmd!));
+  const actions: Record<string, () => void> = {
+    "all-tracks": () => opts.onAllTracks(),
+    hint: () => {
+      if (trainer.current) void bubble.say(mors.hint(trainer.current));
+    },
+    answer: () => {
+      answer.hidden = !answer.hidden;
+    },
+    reset: () => {
+      trainer.reset();
+      void bubble.say("Files reset. Same challenge, clean slate.", { instant: true });
+    },
+    skip: () => {
+      if (!trainer.skip()) void bubble.say("That was the last challenge of the track.", { instant: true });
+    },
+    next: () => {
+      if (trainer.next()) return;
+      if (trainer.finished) opts.onAllTracks();
+    },
+  };
+  for (const button of element.querySelectorAll<HTMLButtonElement>("[data-action]")) {
+    button.addEventListener("click", () => actions[button.dataset.action!]?.());
   }
 
+  let lastChallengeId = "";
   const render = () => {
+    const track = trainer.track;
+    const challenge = trainer.current;
+    if (!track || !challenge) return;
     const { done, total, index } = trainer.progress;
-    const task = trainer.current;
+    q(".track-name").textContent = track.title;
+    q<HTMLElement>(".progress-bar").style.width = `${Math.round((done / total) * 100)}%`;
+    q(".track-count").textContent = `${done} / ${total}`;
+    q(".challenge-meta").textContent = `Challenge ${index + 1} of ${total}`;
+    q(".challenge-title").textContent = challenge.title;
+    q(".challenge-story").textContent = challenge.story;
+    q(".challenge-task").textContent = challenge.task;
+    answer.querySelector("code")!.textContent = challenge.solution.join("\n");
+    if (challenge.id !== lastChallengeId) {
+      answer.hidden = true;
+      lastChallengeId = challenge.id;
+    }
+    element.classList.toggle("solved", trainer.solved);
+    const last = index === total - 1;
+    if (trainer.solved) status.textContent = trainer.finished ? "✓ Solved. Track complete!" : "✓ Solved";
+    else status.textContent = trainer.isCompleted(challenge) ? "Completed earlier" : "";
+    next.disabled = !trainer.solved || (last && !trainer.finished);
+    next.textContent = last && trainer.finished ? "Back to tracks" : "Next →";
 
-    progress.setAttribute("aria-valuenow", String(done));
-    progress.setAttribute("aria-valuemax", String(total));
-    bar.style.width = `${total === 0 ? 0 : Math.round((done / total) * 100)}%`;
-    label.textContent = `${done} / ${total} done`;
-
-    meta.textContent = `Task ${index + 1} of ${total} · ${task.topic}`;
-    title.textContent = task.title;
-    text.textContent = task.task;
-    if (trainer.solved) status.textContent = trainer.finished ? "✓ Solved! You have finished every task." : "✓ Solved! Press Next to continue.";
-    else status.textContent = trainer.isCompleted(task) ? "Completed earlier. Solve it again or press Skip." : "";
-    nextButton.disabled = !trainer.solved;
-
-    // The full list, grouped by topic through a data attribute the CSS can style.
-    list.replaceChildren();
-    let topic = "";
-    trainer.challenges.forEach((c, i) => {
-      if (c.topic !== topic) {
-        topic = c.topic;
-        const heading = document.createElement("li");
-        heading.className = "task-list-topic";
-        heading.textContent = topic;
-        heading.setAttribute("role", "presentation");
-        list.appendChild(heading);
-      }
+    rows.replaceChildren();
+    track.challenges.forEach((c, i) => {
       const item = document.createElement("li");
-      item.className = ["task-list-item", trainer.isCompleted(c) ? "done" : "", i === index ? "current" : ""].join(" ").trim();
       const button = document.createElement("button");
       button.type = "button";
-      button.className = "task-link";
-      button.textContent = `${i + 1}. ${c.title}`;
+      button.className = ["challenge-row", trainer.isCompleted(c) ? "done" : "", i === index ? "current" : ""].join(" ").trim();
       button.setAttribute("aria-current", i === index ? "true" : "false");
-      button.addEventListener("click", () => opts.onCommand(`task ${i + 1}`));
+      button.innerHTML = `<span class="challenge-row-num">${i + 1}</span><span class="challenge-row-title"></span><span class="challenge-row-check" aria-hidden="true">✓</span>`;
+      button.querySelector(".challenge-row-title")!.textContent = c.title;
+      button.addEventListener("click", () => trainer.goTo(i));
       item.appendChild(button);
-      list.appendChild(item);
+      rows.appendChild(item);
     });
   };
 
   trainer.subscribe(render);
   render();
+  return { element, bubble, render };
 }

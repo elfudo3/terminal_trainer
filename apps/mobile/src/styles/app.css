@@ -1,78 +1,20 @@
 /*
- * Terminal Trainer mobile styles.
- * Order: tokens → base → app frame (app bar, tabs) → practice screen →
- * tasks screen → learn screen → settings sheet → toast → accessibility.
- * Tap targets are 44px or taller; text inputs are 16px so iOS never zooms.
+ * Terminal Trainer mobile layout. Tokens, buttons, cards, the Mors bubble,
+ * the auth page and the track menu come from @terminal-trainer/ui/theme.css;
+ * this file only lays the phone screens out.
+ * Order: frame (app bar, tabs) → home → practice → learn → settings → toast.
  */
-
-:root {
-  --bg: #0b0f14;
-  --surface: #131a23;
-  --surface-2: #1c2530;
-  --border: #253141;
-  --text: #e6edf3;
-  --muted: #8b98a8;
-  --accent: #58a6ff;
-  --accent-strong: #1f6feb;
-  --success: #3fb950;
-  --danger: #f85149;
-  --prompt: #7ee787;
-  --radius: 14px;
-  --tap: 44px;
-  --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
-  color-scheme: dark;
-}
-
-@media (prefers-color-scheme: light) {
-  :root {
-    --bg: #f2f4f7;
-    --surface: #ffffff;
-    --surface-2: #eef1f5;
-    --border: #d7dde5;
-    --text: #1f2328;
-    --muted: #57606a;
-    --accent: #0969da;
-    --accent-strong: #0969da;
-    --success: #1a7f37;
-    --danger: #cf222e;
-    --prompt: #1a7f37;
-    color-scheme: light;
-  }
-}
-
-/* ---- Base ---------------------------------------------------------------- */
-
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
 
 html,
 body {
-  height: 100%;
-  margin: 0;
   overflow: hidden; /* the app manages its own scrolling areas */
-  background: var(--bg);
 }
 
 body {
-  color: var(--text);
-  font-family: var(--font);
-  line-height: 1.4;
-  -webkit-font-smoothing: antialiased;
-  -webkit-text-size-adjust: 100%;
-  -webkit-tap-highlight-color: transparent;
   touch-action: manipulation; /* no double-tap zoom delay on buttons */
 }
 
-[hidden] {
-  display: none !important;
-}
-
 button {
-  cursor: pointer;
   -webkit-user-select: none;
   user-select: none;
 }
@@ -96,7 +38,6 @@ button {
 }
 
 .appbar-title {
-  margin: 0;
   font-size: 17px;
   font-weight: 650;
 }
@@ -147,9 +88,8 @@ button {
 }
 
 .screen-header h2 {
-  margin: 0 0 8px;
-  font-size: 26px;
-  font-weight: 700;
+  font-size: 24px;
+  margin: 2px 0 6px;
 }
 
 .tabbar {
@@ -171,7 +111,6 @@ button {
   border: 0;
   background: transparent;
   color: var(--muted);
-  font: inherit;
   font-size: 11px;
   font-weight: 600;
 }
@@ -186,23 +125,62 @@ button {
   display: none;
 }
 
-/* ---- Practice screen ----------------------------------------------------- */
+/* ---- Home ---------------------------------------------------------------- */
+
+.home {
+  gap: 4px;
+}
+
+.home-mors {
+  padding: 8px 16px 14px;
+}
+
+.overall-progress {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.home-tracks {
+  padding: 0 12px;
+}
+
+.home .track-menu {
+  grid-template-columns: 1fr;
+}
+
+/* ---- Practice ------------------------------------------------------------ */
+
+.no-track {
+  flex: none;
+  margin: 6px 12px 8px;
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 14px;
+  color: var(--muted);
+}
 
 .task-card {
   flex: none;
   margin: 6px 12px 8px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
+  max-height: 52%;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
-  transition: border-color 200ms ease;
+  transition:
+    border-color 200ms ease,
+    box-shadow 200ms ease;
 }
 
 .task-card.solved {
   border-color: var(--success);
+  box-shadow: var(--glow-success);
 }
 
 .task-card-header {
+  flex: none;
   width: 100%;
   min-height: 52px;
   display: flex;
@@ -211,8 +189,6 @@ button {
   padding: 8px 14px;
   border: 0;
   background: transparent;
-  color: inherit;
-  font: inherit;
   text-align: left;
 }
 
@@ -246,22 +222,27 @@ button {
   transform: rotate(180deg);
 }
 
-.task-card.collapsed .task-card-body {
+.task-card.collapsed .task-card-body,
+.task-card.collapsed .task-actions {
   display: none;
 }
 
 .task-card-body {
-  padding: 0 14px 12px;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 14px 10px;
 }
 
-.task-text {
-  margin: 0 0 10px;
+.task-card-body .challenge-story {
+  font-size: 13.5px;
+}
+
+.task-card-body .challenge-task {
   font-size: 15px;
-  line-height: 1.45;
 }
 
 .task-status {
-  margin: 0 0 10px;
+  margin: 8px 0 0;
   color: var(--success);
   font-size: 14px;
   font-weight: 600;
@@ -271,44 +252,84 @@ button {
   display: none;
 }
 
+.task-mors {
+  margin-top: 10px;
+}
+
+.task-mors .mors-text {
+  font-size: 14px;
+}
+
+.task-mors .mors-bubble[hidden] {
+  display: none;
+}
+
 .task-actions {
+  flex: none;
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  padding: 10px 14px 12px;
+  border-top: 1px solid var(--border);
 }
 
-.btn {
-  min-height: 40px;
-  padding: 0 14px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: var(--surface-2);
-  color: var(--text);
-  font: inherit;
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.btn:active {
-  filter: brightness(1.15);
-}
-
-.btn-primary {
+.task-actions .btn-primary {
   margin-left: auto;
-  background: var(--accent-strong);
-  border-color: var(--accent-strong);
-  color: #fff;
 }
 
-.btn-danger {
-  color: var(--danger);
-  border-color: var(--danger);
+.task-secondary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.challenge-rows {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.challenge-row {
+  width: 100%;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
   background: transparent;
+  text-align: left;
+  font-size: 14px;
 }
 
-.btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
+.challenge-row.current {
+  border-color: var(--accent);
+  background: var(--surface-2);
+}
+
+.challenge-row-num {
+  width: 22px;
+  color: var(--faint);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.challenge-row-title {
+  flex: 1;
+}
+
+.challenge-row-check {
+  color: var(--success);
+  opacity: 0;
+}
+
+.challenge-row.done .challenge-row-check {
+  opacity: 1;
 }
 
 .terminal-root {
@@ -320,7 +341,7 @@ button {
 
 .terminal {
   border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-lg);
 }
 
 .suggestions,
@@ -346,16 +367,9 @@ button {
   padding-bottom: 0;
 }
 
-.chip {
+.suggestions .chip {
   flex: none;
   height: 34px;
-  padding: 0 12px;
-  border: 1px solid var(--border);
-  border-radius: 17px;
-  background: var(--surface);
-  color: var(--text);
-  font-family: var(--mono);
-  font-size: 13px;
 }
 
 .chip:active {
@@ -407,43 +421,32 @@ button {
 }
 
 .keybar-key:active {
-  background: var(--accent-strong);
-  color: #fff;
+  background: var(--accent);
+  color: var(--on-accent);
 }
 
-/* ---- Tasks screen -------------------------------------------------------- */
+/* ---- Learn --------------------------------------------------------------- */
 
-.progress {
-  height: 8px;
-  margin: 6px 0;
-  background: var(--surface-2);
-  border-radius: 4px;
-  overflow: hidden;
+.learn-search {
+  width: 100%;
+  min-height: var(--tap);
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 16px; /* 16px stops iOS from zooming into the field */
 }
 
-.progress-bar {
-  height: 100%;
-  width: 0;
-  background: var(--success);
-  transition: width 300ms ease;
-}
-
-.progress-label {
-  margin: 0;
-  color: var(--muted);
-  font-size: 14px;
-}
-
-.task-list,
 .command-list {
   list-style: none;
   margin: 0;
   padding: 0 12px;
 }
 
-.topic-heading,
 .category-heading {
-  margin: 16px 4px 6px;
+  margin: 16px 16px 6px;
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -451,87 +454,24 @@ button {
   color: var(--muted);
 }
 
-.category-heading {
-  margin-left: 16px;
-}
-
-.task-row,
 .command-row {
   width: 100%;
   min-height: 52px;
   display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 6px;
-  padding: 8px 12px;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background: var(--surface);
-  color: var(--text);
-  font: inherit;
-  font-size: 15px;
-  text-align: left;
-}
-
-.task-row:active,
-.command-row:active {
-  background: var(--surface-2);
-}
-
-.task-num {
-  flex: none;
-  width: 28px;
-  height: 28px;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  background: var(--surface-2);
-  color: var(--muted);
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.task-row-title {
-  flex: 1;
-}
-
-.task-check {
-  color: var(--success);
-  font-weight: 700;
-  opacity: 0;
-}
-
-.task-row.done .task-check {
-  opacity: 1;
-}
-
-.task-row.done .task-num {
-  background: var(--success);
-  color: #fff;
-}
-
-.task-row.current {
-  border-color: var(--accent);
-}
-
-/* ---- Learn screen -------------------------------------------------------- */
-
-.learn-search {
-  width: 100%;
-  min-height: var(--tap);
-  padding: 0 14px;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background: var(--surface);
-  color: var(--text);
-  font: inherit;
-  font-size: 16px; /* 16px stops iOS from zooming into the field */
-}
-
-.command-row {
   flex-direction: column;
   align-items: flex-start;
   gap: 2px;
+  margin-bottom: 6px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  text-align: left;
+  font-size: 15px;
+}
+
+.command-row:active {
+  background: var(--surface-2);
 }
 
 .command-name {
@@ -555,7 +495,6 @@ button {
   border: 0;
   background: transparent;
   color: var(--accent);
-  font: inherit;
   font-size: 16px;
 }
 
@@ -566,16 +505,15 @@ button {
 }
 
 .learn-detail .command-summary {
-  margin: 0;
   font-size: 16px;
 }
 
 .learn-detail h3,
 .sheet h3 {
   margin: 18px 0 6px;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted);
 }
@@ -585,7 +523,7 @@ button {
   padding: 12px;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   font-family: var(--mono);
@@ -618,6 +556,7 @@ button {
   overflow-y: auto;
   padding: 8px 20px calc(20px + env(safe-area-inset-bottom));
   background: var(--surface);
+  border-top: 1px solid var(--border);
   border-radius: 20px 20px 0 0;
   animation: slide-up 250ms ease;
 }
@@ -634,18 +573,33 @@ button {
   height: 4px;
   margin: 4px auto 12px;
   border-radius: 2px;
-  background: var(--border);
+  background: var(--border-strong);
 }
 
 .sheet h2 {
-  margin: 0;
   font-size: 22px;
+}
+
+.settings-profile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+}
+
+.settings-profile-name {
+  flex: 1;
+  font-weight: 650;
 }
 
 .segmented {
   display: flex;
-  border: 1px solid var(--border);
-  border-radius: 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
   overflow: hidden;
 }
 
@@ -655,13 +609,12 @@ button {
   border: 0;
   background: transparent;
   color: var(--text);
-  font: inherit;
   font-weight: 600;
 }
 
 .segmented button[aria-pressed="true"] {
-  background: var(--accent-strong);
-  color: #fff;
+  background: var(--accent);
+  color: var(--on-accent);
 }
 
 .reset-confirm-row {
@@ -678,7 +631,6 @@ button {
 }
 
 .about {
-  margin: 0;
   color: var(--muted);
   font-size: 14px;
   line-height: 1.5;
@@ -700,7 +652,7 @@ button {
   padding: 10px 18px;
   border-radius: 22px;
   background: var(--success);
-  color: #fff;
+  color: #06250f;
   font-weight: 700;
   opacity: 0;
   transform: translate(-50%, 10px);
@@ -713,24 +665,4 @@ button {
 .toast-visible {
   opacity: 1;
   transform: translate(-50%, 0);
-}
-
-/* ---- Accessibility ------------------------------------------------------- */
-
-:focus-visible {
-  outline: 2px solid #f0b429;
-  outline-offset: 2px;
-}
-
-.terminal-input:focus-visible {
-  outline: none;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    transition: none !important;
-    animation: none !important;
-  }
 }
