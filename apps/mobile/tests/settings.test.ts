@@ -31,7 +31,7 @@ describe("settings sheet", () => {
     const { sheet, onSignOut } = make();
     sheet.open();
     expect(sheet.element.querySelector(".settings-profile-name")?.textContent).toBe("Fudo");
-    expect(sheet.element.querySelector(".settings-profile .avatar")?.textContent).toBe(SIGILS[2]);
+    expect(sheet.element.querySelector(".settings-profile .avatar img")?.getAttribute("alt")).toBe("Lightning");
     sheet.element.querySelector<HTMLButtonElement>(".sign-out")!.click();
     expect(onSignOut).toHaveBeenCalled();
     expect(sheet.isOpen()).toBe(false);

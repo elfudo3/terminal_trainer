@@ -17,7 +17,7 @@ import {
   type Profile,
   type ProgressStorage,
 } from "@terminal-trainer/core";
-import { createAuthPage } from "@terminal-trainer/ui";
+import { brandMark, createAuthPage } from "@terminal-trainer/ui";
 import { createTabs, type Tabs } from "./components/tabs";
 import { showToast } from "./components/toast";
 import { noopNative, type NativeBridge } from "./native";
@@ -67,11 +67,14 @@ export function createApp(root: HTMLElement, opts: AppOptions = {}): App {
   const store = new ProfileStore(opts.storage);
   const app: App = { element: root, store, session: null };
 
+  let auth: ReturnType<typeof createAuthPage> | null = null;
   const showAuth = () => {
     root.replaceChildren();
-    createAuthPage(root, store, { onSignIn: (profile) => startSession(profile) });
+    auth = createAuthPage(root, store, { onSignIn: (profile) => startSession(profile) });
   };
   const startSession = (profile: Profile) => {
+    auth?.dispose();
+    auth = null;
     root.replaceChildren();
     app.session = createSession(root, profile, opts, () => {
       store.signOut();
@@ -101,11 +104,12 @@ function createSession(root: HTMLElement, profile: Profile, opts: AppOptions, on
   element.className = "app";
   element.innerHTML = `
     <header class="appbar">
-      <h1 class="appbar-title"><span class="appbar-logo" aria-hidden="true">&gt;_</span> Terminal Trainer</h1>
+      <h1 class="appbar-title">Terminal Trainer</h1>
       <button type="button" class="icon-button settings-button" aria-label="Settings">${ICONS.settings}</button>
     </header>
     <main class="screens"></main>`;
   root.appendChild(element);
+  element.querySelector(".appbar-title")!.prepend(brandMark(26));
   const screens = element.querySelector<HTMLElement>(".screens")!;
 
   const goHome = (line: string) => {

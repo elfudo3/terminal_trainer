@@ -15,4 +15,4 @@ export { tracks } from "./trainer/tracks";
 export { trainerCommands } from "./trainer/commands";
 export { createMors, type MorsVoice } from "./mors/voice";
 export { MORS_FILES, MORS_HOME } from "./mors/files";
-export { ProfileStore, SIGILS, PROFILES_KEY, namespacedStorage, type Profile } from "./profiles/profiles";
+export { ProfileStore, SIGILS, PROFILES_KEY, namespacedStorage, normalizeSigil, type Profile, type Sigil } from "./profiles/profiles";

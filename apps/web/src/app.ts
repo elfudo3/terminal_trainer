@@ -17,7 +17,7 @@ import {
   type Profile,
   type ProgressStorage,
 } from "@terminal-trainer/core";
-import { createAuthPage, createMorsBubble, createTerminal, createTrackMenu, type TerminalView } from "@terminal-trainer/ui";
+import { avatar, brandMark, createAuthPage, createMorsBubble, createTerminal, createTrackMenu, type TerminalView } from "@terminal-trainer/ui";
 import { createPanel, type Panel } from "./panel";
 
 export interface WebAppOptions {
@@ -49,12 +49,15 @@ export function createWebApp(root: HTMLElement, opts: WebAppOptions = {}): WebAp
   const store = new ProfileStore(opts.storage);
   const app: WebApp = { element: root, store, session: null };
 
+  let auth: ReturnType<typeof createAuthPage> | null = null;
   const showAuth = () => {
     root.replaceChildren();
-    createAuthPage(root, store, { onSignIn: (profile) => startSession(profile) });
+    auth = createAuthPage(root, store, { onSignIn: (profile) => startSession(profile) });
   };
 
   const startSession = (profile: Profile) => {
+    auth?.dispose();
+    auth = null;
     root.replaceChildren();
     app.session = createSession(root, profile, opts, () => {
       store.signOut();
@@ -81,9 +84,8 @@ function createSession(root: HTMLElement, profile: Profile, opts: WebAppOptions,
   element.className = "app arcane-bg";
   element.innerHTML = `
     <header class="appbar">
-      <div class="brand"><span class="brand-logo" aria-hidden="true">&gt;_</span> Terminal Trainer</div>
+      <div class="brand">Terminal Trainer</div>
       <div class="profile-chip">
-        <span class="avatar avatar-sm" aria-hidden="true"></span>
         <span class="profile-chip-name"></span>
         <button type="button" class="btn btn-ghost btn-sm sign-out">Sign out</button>
       </div>
@@ -115,7 +117,8 @@ function createSession(root: HTMLElement, profile: Profile, opts: WebAppOptions,
   root.appendChild(element);
 
   const q = <T extends HTMLElement>(selector: string) => element.querySelector<T>(selector)!;
-  q(".avatar").textContent = profile.sigil;
+  q(".brand").prepend(brandMark(28));
+  q(".profile-chip").prepend(avatar(profile.sigil, 30));
   q(".profile-chip-name").textContent = profile.name;
   q(".sign-out").addEventListener("click", onSignOut);
 

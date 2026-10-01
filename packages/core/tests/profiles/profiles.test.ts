@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { PROFILES_KEY, ProfileStore, SIGILS, namespacedStorage } from "../../src/profiles/profiles";
+import { PROFILES_KEY, ProfileStore, SIGILS, namespacedStorage, normalizeSigil } from "../../src/profiles/profiles";
 
 function memory() {
   const data = new Map<string, string>();
@@ -23,6 +23,16 @@ describe("ProfileStore", () => {
     expect(() => store.create("x".repeat(40), SIGILS[0]!)).toThrow(/24/);
     expect(() => store.create("Fudo", SIGILS[0]!)).toThrow(/already/);
     expect(store.create("Ann", "not-a-sigil").sigil).toBe(SIGILS[0]);
+  });
+
+  it("maps glyphs from older profiles to the new artwork ids", () => {
+    expect(normalizeSigil("☾")).toBe("moon");
+    expect(normalizeSigil("⚡")).toBe("lightning");
+    expect(normalizeSigil("knight")).toBe("knight");
+    expect(normalizeSigil(42)).toBe("star");
+    const storage = memory();
+    storage.setItem(PROFILES_KEY, JSON.stringify({ profiles: [{ id: "p_1", name: "Old", sigil: "♞", createdAt: 1, lastSeenAt: 1 }], currentId: null }));
+    expect(new ProfileStore(storage).list()[0]?.sigil).toBe("knight");
   });
 
   it("signs in and out, remembering the current profile across reloads", () => {

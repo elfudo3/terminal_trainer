@@ -313,14 +313,26 @@ kbd {
 .avatar {
   display: inline-grid;
   place-items: center;
+  flex: none;
   width: 40px;
   height: 40px;
   border-radius: 50%;
   background: var(--arcane-soft);
   border: 1px solid var(--arcane);
-  color: var(--arcane);
-  font-size: 18px;
-  font-weight: 700;
+  overflow: hidden;
+}
+
+.avatar img,
+.sigil-img {
+  display: block;
+  object-fit: contain;
+  filter: drop-shadow(0 0 6px rgba(157, 140, 255, 0.35));
+}
+
+.brand-mark {
+  display: inline-block;
+  vertical-align: middle;
+  object-fit: contain;
 }
 
 .mors-avatar {
@@ -405,6 +417,43 @@ kbd {
 
 .auth-avatar .mors-avatar {
   filter: drop-shadow(0 0 24px rgba(157, 140, 255, 0.45));
+}
+
+/* The 3D Mors: a square stage with a soft violet halo behind him. */
+.mors-model {
+  position: relative;
+  width: min(260px, 64vw);
+  aspect-ratio: 1;
+  margin: 0 auto;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 45%, rgba(157, 140, 255, 0.22), rgba(157, 140, 255, 0.06) 55%, transparent 72%);
+  opacity: 0;
+  transition: opacity 500ms ease;
+}
+
+.mors-model.is-ready {
+  opacity: 1;
+}
+
+.mors-model canvas {
+  position: absolute;
+  inset: 0;
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+  cursor: grab;
+  /* The bust fades into the halo instead of ending on a hard edge. */
+  -webkit-mask-image: linear-gradient(to bottom, #000 80%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 80%, transparent 100%);
+}
+
+.mors-model canvas:active {
+  cursor: grabbing;
+}
+
+.mors-model.is-fallback {
+  display: grid;
+  place-items: center;
 }
 
 .auth-title {
@@ -542,36 +591,48 @@ kbd {
   gap: 6px;
 }
 
+.sigil-option {
+  min-height: 52px;
+  display: grid;
+  place-items: center;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-elevated);
+  transition:
+    border-color 120ms ease,
+    background 120ms ease,
+    transform 120ms ease;
+}
+
+.sigil-option img {
+  opacity: 0.75;
+  transition: opacity 120ms ease, transform 120ms ease;
+}
+
+.sigil-option:hover {
+  border-color: var(--border-strong);
+}
+
+.sigil-option:hover img {
+  opacity: 1;
+}
+
+.sigil-option[aria-checked="true"] {
+  border-color: var(--arcane);
+  background: var(--arcane-soft);
+  box-shadow: 0 0 0 1px var(--arcane), 0 0 18px var(--arcane-soft);
+}
+
+.sigil-option[aria-checked="true"] img {
+  opacity: 1;
+  transform: scale(1.08);
+}
+
 @media (max-width: 480px) {
   .sigil-options {
     grid-template-columns: repeat(4, 1fr);
   }
-}
-
-.sigil-option {
-  min-height: 44px;
-  display: grid;
-  place-items: center;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--bg-elevated);
-  font-size: 18px;
-  color: var(--muted);
-  transition:
-    border-color 120ms ease,
-    color 120ms ease,
-    background 120ms ease;
-}
-
-.sigil-option:hover {
-  color: var(--text);
-  border-color: var(--border-strong);
-}
-
-.sigil-option[aria-checked="true"] {
-  color: var(--arcane);
-  border-color: var(--arcane);
-  background: var(--arcane-soft);
 }
 
 /* ---- Track menu ---------------------------------------------------------- */

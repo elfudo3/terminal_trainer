@@ -11,13 +11,25 @@ import type { ProgressStorage } from "../trainer/trainer";
 export interface Profile {
   id: string;
   name: string;
-  /** A glyph shown on the avatar, from SIGILS. */
-  sigil: string;
+  /** The avatar artwork, one of SIGILS. */
+  sigil: Sigil;
   createdAt: number;
   lastSeenAt: number;
 }
 
-export const SIGILS = ["✦", "☾", "⚡", "❄", "✿", "⚗", "♞", "☄"] as const;
+/** Avatar artwork ids; the images live in packages/ui/src/assets. */
+export const SIGILS = ["star", "moon", "lightning", "blackhole", "flower", "jellyfish", "knight"] as const;
+export type Sigil = (typeof SIGILS)[number];
+
+/** Profiles saved before the artwork existed stored a glyph; map each to the nearest icon. */
+const LEGACY_SIGILS: Record<string, Sigil> = { "✦": "star", "☾": "moon", "⚡": "lightning", "❄": "blackhole", "✿": "flower", "⚗": "jellyfish", "♞": "knight", "☄": "blackhole" };
+
+/** A valid sigil id for any stored value, defaulting to the first. */
+export function normalizeSigil(value: unknown): Sigil {
+  if (typeof value !== "string") return SIGILS[0];
+  if ((SIGILS as readonly string[]).includes(value)) return value as Sigil;
+  return LEGACY_SIGILS[value] ?? SIGILS[0];
+}
 
 export const PROFILES_KEY = "terminal-trainer.profiles";
 export const MAX_NAME_LENGTH = 24;
@@ -57,7 +69,7 @@ export class ProfileStore {
     const profile: Profile = {
       id: `p_${time.toString(36)}${(this.counter++).toString(36)}`,
       name,
-      sigil: (SIGILS as readonly string[]).includes(sigil) ? sigil : SIGILS[0],
+      sigil: normalizeSigil(sigil),
       createdAt: time,
       lastSeenAt: time,
     };
@@ -90,7 +102,9 @@ export class ProfileStore {
     try {
       const raw = this.storage?.getItem(PROFILES_KEY);
       const saved = raw ? (JSON.parse(raw) as Partial<Saved>) : {};
-      this.profiles = Array.isArray(saved.profiles) ? saved.profiles.filter((p) => p && typeof p.id === "string" && typeof p.name === "string") : [];
+      this.profiles = Array.isArray(saved.profiles)
+        ? saved.profiles.filter((p) => p && typeof p.id === "string" && typeof p.name === "string").map((p) => ({ ...p, sigil: normalizeSigil(p.sigil) }))
+        : [];
       this.currentId = typeof saved.currentId === "string" ? saved.currentId : null;
     } catch {
       this.profiles = [];

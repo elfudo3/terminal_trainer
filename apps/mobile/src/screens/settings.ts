@@ -3,6 +3,7 @@
  * reset progress (inline confirmation, no native dialog) and app info.
  */
 import type { Profile } from "@terminal-trainer/core";
+import { avatar } from "@terminal-trainer/ui";
 import type { FontSize, Preferences } from "../preferences";
 
 export interface SettingsSheetOptions {
@@ -31,7 +32,6 @@ export function createSettingsSheet(root: HTMLElement, opts: SettingsSheetOption
       <h2 id="settings-title">Settings</h2>
 
       <div class="settings-profile">
-        <span class="avatar" aria-hidden="true"></span>
         <span class="settings-profile-name"></span>
         <button type="button" class="btn btn-sm sign-out">Sign out</button>
       </div>
@@ -62,7 +62,7 @@ export function createSettingsSheet(root: HTMLElement, opts: SettingsSheetOption
   const sheet = element.querySelector<HTMLElement>(".sheet")!;
   const confirmRow = element.querySelector<HTMLElement>(".reset-confirm-row")!;
   element.querySelector(".version")!.textContent = opts.version;
-  element.querySelector(".settings-profile .avatar")!.textContent = opts.profile.sigil;
+  element.querySelector(".settings-profile")!.prepend(avatar(opts.profile.sigil, 40));
   element.querySelector(".settings-profile-name")!.textContent = opts.profile.name;
   element.querySelector(".sign-out")!.addEventListener("click", () => {
     close();

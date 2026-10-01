@@ -18,6 +18,8 @@ describe("auth page", () => {
     const { page } = make();
     expect(page.element.querySelector<HTMLElement>(".auth-existing")!.hidden).toBe(true);
     expect(page.element.querySelectorAll(".sigil-option").length).toBe(SIGILS.length);
+    expect(page.element.querySelector('.sigil-option[data-sigil="knight"] img')?.getAttribute("alt")).toBe("Knight");
+    expect(page.element.querySelector(".auth-avatar .mors-model")).not.toBeNull();
     expect(page.element.querySelector(".auth-heading-new")?.textContent).toBe("Create your profile");
   });
 
@@ -46,6 +48,7 @@ describe("auth page", () => {
     expect(page.element.querySelector<HTMLElement>(".auth-existing")!.hidden).toBe(false);
     const buttons = page.element.querySelectorAll<HTMLButtonElement>(".profile-button");
     expect(buttons.length).toBe(2);
+    expect(buttons[0]!.querySelector(".avatar img")).not.toBeNull();
     expect(buttons[0]!.querySelector(".profile-meta")?.textContent).toMatch(/just now/);
     buttons[1]!.click();
     expect(onSignIn).toHaveBeenCalledWith(expect.objectContaining({ name: store.list()[0]!.name }));

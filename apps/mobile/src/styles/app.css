@@ -42,9 +42,10 @@ button {
   font-weight: 650;
 }
 
-.appbar-logo {
-  font-family: var(--mono);
-  color: var(--prompt);
+.appbar-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .icon-button {

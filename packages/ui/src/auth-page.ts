@@ -3,12 +3,17 @@
  * a sigil. Profiles are local to the device (see core/profiles), so there
  * is no password; the page is about identity and progress, not security.
  */
-import { SIGILS, type Profile, type ProfileStore } from "@terminal-trainer/core";
+import { SIGILS, type Profile, type ProfileStore, type Sigil } from "@terminal-trainer/core";
 import { morsAvatar } from "./mors-avatar";
+import { createMorsModel, type MorsModel } from "./mors-model";
+import { SIGIL_ART, avatar, sigilImage } from "./sigils";
 
 export interface AuthPage {
   element: HTMLElement;
+  /** The 3D Mors in the hero (falls back to the SVG avatar without WebGL). */
+  model: MorsModel;
   render(): void;
+  dispose(): void;
 }
 
 /** "Just now", "3 days ago"... for the profile list. */
@@ -23,7 +28,13 @@ export function timeAgo(ms: number, now = Date.now()): string {
   return `${d} day${d === 1 ? "" : "s"} ago`;
 }
 
-export function createAuthPage(root: HTMLElement, store: ProfileStore, opts: { onSignIn: (profile: Profile) => void }): AuthPage {
+export interface AuthPageOptions {
+  onSignIn: (profile: Profile) => void;
+  /** Skip the 3D model's autonomous motion (defaults to the OS setting). */
+  reducedMotion?: boolean;
+}
+
+export function createAuthPage(root: HTMLElement, store: ProfileStore, opts: AuthPageOptions): AuthPage {
   const element = document.createElement("section");
   element.className = "auth-page arcane-bg";
   element.innerHTML = `
@@ -52,7 +63,7 @@ export function createAuthPage(root: HTMLElement, store: ProfileStore, opts: { o
         <button type="submit" class="btn btn-primary btn-block">Start practising</button>
       </form>
     </div>`;
-  element.querySelector(".auth-avatar")!.appendChild(morsAvatar(112));
+  const model = createMorsModel(element.querySelector(".auth-avatar")!, { fallback: () => morsAvatar(112), reducedMotion: opts.reducedMotion });
   root.appendChild(element);
 
   const list = element.querySelector<HTMLUListElement>(".profile-list")!;
@@ -61,21 +72,21 @@ export function createAuthPage(root: HTMLElement, store: ProfileStore, opts: { o
   const nameInput = element.querySelector<HTMLInputElement>('input[name="name"]')!;
   const error = element.querySelector<HTMLElement>(".form-error")!;
   const sigilBox = element.querySelector<HTMLElement>(".sigil-options")!;
-  let sigil: string = SIGILS[0];
+  let sigil: Sigil = SIGILS[0];
 
   const renderSigils = () => {
     sigilBox.replaceChildren();
-    for (const glyph of SIGILS) {
+    for (const id of SIGILS) {
       const button = document.createElement("button");
       button.type = "button";
       button.className = "sigil-option";
       button.setAttribute("role", "radio");
-      button.setAttribute("aria-checked", String(glyph === sigil));
-      button.setAttribute("aria-label", `Sigil ${glyph}`);
-      button.dataset.sigil = glyph;
-      button.textContent = glyph;
+      button.setAttribute("aria-checked", String(id === sigil));
+      button.setAttribute("aria-label", SIGIL_ART[id].label);
+      button.dataset.sigil = id;
+      button.appendChild(sigilImage(id, 36));
       button.addEventListener("click", () => {
-        sigil = glyph;
+        sigil = id;
         renderSigils();
       });
       sigilBox.appendChild(button);
@@ -94,8 +105,8 @@ export function createAuthPage(root: HTMLElement, store: ProfileStore, opts: { o
       button.type = "button";
       button.className = "profile-button";
       button.dataset.id = profile.id;
-      button.innerHTML = `<span class="avatar" aria-hidden="true"></span><span class="profile-text"><span class="profile-name"></span><span class="profile-meta"></span></span>`;
-      button.querySelector(".avatar")!.textContent = profile.sigil;
+      button.innerHTML = `<span class="profile-text"><span class="profile-name"></span><span class="profile-meta"></span></span>`;
+      button.prepend(avatar(profile.sigil, 40));
       button.querySelector(".profile-name")!.textContent = profile.name;
       button.querySelector(".profile-meta")!.textContent = `Last seen ${timeAgo(profile.lastSeenAt)}`;
       button.addEventListener("click", () => opts.onSignIn(store.signIn(profile.id)));
@@ -135,5 +146,5 @@ export function createAuthPage(root: HTMLElement, store: ProfileStore, opts: { o
   });
 
   render();
-  return { element, render };
+  return { element, model, render, dispose: () => model.dispose() };
 }
