@@ -2,16 +2,21 @@
  * The sign-in page: pick an existing profile or create one with a name and
  * a sigil. Profiles are local to the device (see core/profiles), so there
  * is no password; the page is about identity and progress, not security.
+ *
+ * Composition: Mors and the introduction on one side, the profile card on
+ * the other (stacked on narrow screens), over the animated backdrop. The
+ * portrait, text and controls render first; the effects attach after.
  */
 import { SIGILS, type Profile, type ProfileStore, type Sigil } from "@terminal-trainer/core";
-import { morsAvatar } from "./mors-avatar";
-import { createMorsModel, type MorsModel } from "./mors-model";
+import { createBackdrop, type Backdrop } from "./effects/backdrop";
+import { applyBorderGlow, type Glow } from "./effects/border-glow";
+import { morsImage } from "./mors-image";
 import { SIGIL_ART, avatar, sigilImage } from "./sigils";
 
 export interface AuthPage {
   element: HTMLElement;
-  /** The 3D Mors in the hero (falls back to the SVG avatar without WebGL). */
-  model: MorsModel;
+  backdrop: Backdrop;
+  glow: Glow;
   render(): void;
   dispose(): void;
 }
@@ -30,40 +35,50 @@ export function timeAgo(ms: number, now = Date.now()): string {
 
 export interface AuthPageOptions {
   onSignIn: (profile: Profile) => void;
-  /** Skip the 3D model's autonomous motion (defaults to the OS setting). */
+  /** Skip the animated backdrop (defaults to the OS reduced-motion setting). */
   reducedMotion?: boolean;
+  /** Force the backdrop's WebGL check (tests). */
+  webgl?: boolean;
 }
 
 export function createAuthPage(root: HTMLElement, store: ProfileStore, opts: AuthPageOptions): AuthPage {
   const element = document.createElement("section");
-  element.className = "auth-page arcane-bg";
+  element.className = "auth-page";
   element.innerHTML = `
-    <div class="auth-hero">
-      <div class="auth-avatar"></div>
-      <h1 class="auth-title">Terminal Trainer</h1>
-      <p class="auth-tagline">Master the command line, with a little help from a wizard who is technically dead.</p>
-    </div>
-    <div class="auth-card card">
-      <div class="auth-existing">
-        <h2 class="auth-heading">Who's practising?</h2>
-        <ul class="profile-list"></ul>
-        <p class="auth-or"><span>or start fresh</span></p>
+    <div class="auth-backdrop"></div>
+    <div class="auth-layout">
+      <div class="auth-hero">
+        <figure class="auth-portrait"></figure>
+        <div class="auth-intro">
+          <h1 class="auth-title">Terminal Trainer</h1>
+          <p class="auth-tagline">Master the command line in a sandbox that can't hurt anything, with a little help from a wizard who is technically dead.</p>
+          <p class="auth-note">Profiles live on this device: no account, no password. Pick a name and a sigil, and your progress stays here.</p>
+        </div>
       </div>
-      <form class="profile-form" autocomplete="off">
-        <h2 class="auth-heading auth-heading-new">Create your profile</h2>
-        <label class="field">
-          <span class="field-label">Name</span>
-          <input class="field-input" name="name" type="text" maxlength="24" placeholder="What should Mors call you?" autocapitalize="words" spellcheck="false" required />
-        </label>
-        <fieldset class="sigil-picker">
-          <legend class="field-label">Pick a sigil</legend>
-          <div class="sigil-options" role="radiogroup" aria-label="Sigil"></div>
-        </fieldset>
-        <p class="form-error" role="alert"></p>
-        <button type="submit" class="btn btn-primary btn-block">Start practising</button>
-      </form>
+      <div class="auth-card card">
+        <div class="auth-existing">
+          <h2 class="auth-heading">Who's practising?</h2>
+          <ul class="profile-list"></ul>
+          <p class="auth-or"><span>or start fresh</span></p>
+        </div>
+        <form class="profile-form" autocomplete="off">
+          <h2 class="auth-heading auth-heading-new">Create your profile</h2>
+          <label class="field">
+            <span class="field-label">Name</span>
+            <input class="field-input" name="name" type="text" maxlength="24" placeholder="What should Mors call you?" autocapitalize="words" spellcheck="false" required />
+          </label>
+          <fieldset class="sigil-picker">
+            <legend class="field-label">Pick a sigil</legend>
+            <div class="sigil-options" role="radiogroup" aria-label="Sigil"></div>
+          </fieldset>
+          <p class="form-error" role="alert"></p>
+          <button type="submit" class="btn btn-primary btn-block">Start practising</button>
+        </form>
+      </div>
     </div>`;
-  const model = createMorsModel(element.querySelector(".auth-avatar")!, { fallback: () => morsAvatar(112), reducedMotion: opts.reducedMotion });
+  const portrait = morsImage(320);
+  portrait.loading = "eager";
+  element.querySelector(".auth-portrait")!.appendChild(portrait);
   root.appendChild(element);
 
   const list = element.querySelector<HTMLUListElement>(".profile-list")!;
@@ -146,5 +161,20 @@ export function createAuthPage(root: HTMLElement, store: ProfileStore, opts: Aut
   });
 
   render();
-  return { element, model, render, dispose: () => model.dispose() };
+
+  // Effects last: the page is usable before either attaches.
+  const glow = applyBorderGlow(element.querySelector(".auth-card")!, { hostClass: "auth-card-host" });
+  const backdrop = createBackdrop(element.querySelector(".auth-backdrop")!, { reducedMotion: opts.reducedMotion, webgl: opts.webgl, pointerSource: element });
+
+  return {
+    element,
+    backdrop,
+    glow,
+    render,
+    dispose: () => {
+      backdrop.dispose();
+      glow.dispose();
+      element.remove();
+    },
+  };
 }

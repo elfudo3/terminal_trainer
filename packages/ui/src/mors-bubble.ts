@@ -1,5 +1,5 @@
 /** Mors's speech bubble: avatar on the left, typed text on the right. */
-import { morsAvatar } from "./mors-avatar";
+import { morsAvatar } from "./mors-image";
 import { typewrite, type Typewriter } from "./typewriter";
 
 export interface MorsBubbleOptions {

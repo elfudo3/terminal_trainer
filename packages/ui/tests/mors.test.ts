@@ -1,14 +1,29 @@
 import { describe, expect, it } from "vitest";
 import { createMorsBubble } from "../src/mors-bubble";
-import { MORS_AVATAR_SVG, morsAvatar } from "../src/mors-avatar";
+import { MORS_ALT, MORS_ASPECT, morsAvatar, morsImage } from "../src/mors-image";
 import { typewrite } from "../src/typewriter";
 
-describe("Mors avatar and typewriter", () => {
-  it("renders an accessible SVG at the requested size", () => {
+describe("Mors image", () => {
+  it("is a described image with the artwork's aspect ratio reserved", () => {
+    const img = morsImage(320);
+    expect(img.alt).toBe(MORS_ALT);
+    expect(img.height).toBe(320);
+    expect(img.width).toBe(Math.round(320 * MORS_ASPECT));
+    expect(MORS_ASPECT).toBeGreaterThan(1); // wider than tall: the hat brim
+    expect(img.src).toMatch(/mors-portrait/);
+  });
+
+  it("uses the small file for small sizes and can be decorative", () => {
+    const img = morsImage(40, { decorative: true });
+    expect(img.src).toMatch(/mors-avatar/);
+    expect(img.alt).toBe("");
+    expect(img.getAttribute("aria-hidden")).toBe("true");
+  });
+
+  it("boxes the avatar at the requested size without cropping to a circle", () => {
     const el = morsAvatar(64);
     expect(el.style.width).toBe("64px");
-    expect(el.querySelector("svg")?.getAttribute("aria-label")).toBe("Mors the Wizard");
-    expect(MORS_AVATAR_SVG).toContain("<svg");
+    expect(el.querySelector("img")?.height).toBe(64);
   });
 
   it("types instantly at speed 0 and progressively otherwise", async () => {
@@ -26,12 +41,13 @@ describe("Mors avatar and typewriter", () => {
 });
 
 describe("Mors bubble", () => {
-  it("shows what Mors says and can be cleared", async () => {
+  it("shows what Mors says next to a decorative avatar and can be cleared", async () => {
     document.body.innerHTML = '<div id="root"></div>';
     const bubble = createMorsBubble(document.getElementById("root")!, { speed: 0 });
     await bubble.say("Ah. A new one.");
     expect(bubble.element.querySelector(".mors-text")?.textContent).toBe("Ah. A new one.");
     expect(bubble.element.querySelector(".mors-name")?.textContent).toBe("Mors");
+    expect(bubble.element.querySelector(".mors-avatar img")?.getAttribute("alt")).toBe("");
     expect(bubble.element.hidden).toBe(false);
     bubble.clear();
     expect(bubble.element.hidden).toBe(true);

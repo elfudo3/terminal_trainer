@@ -10,20 +10,23 @@
       "default": "./src/index.ts"
     },
     "./terminal.css": "./src/terminal.css",
-    "./theme.css": "./src/theme.css"
+    "./theme.css": "./src/theme.css",
+    "./vite-plugins": "./vite-plugins.ts"
   },
   "dependencies": {
     "@fontsource/jetbrains-mono": "^5.3.0",
     "@terminal-trainer/core": "*",
-    "three": "^0.186.1"
+    "ogl": "^1.0.11",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
   },
   "scripts": {
     "test": "vitest run",
     "assets": "node scripts/optimize-assets.mjs"
   },
   "devDependencies": {
-    "@gltf-transform/cli": "^4.5.1",
-    "@types/three": "^0.186.0",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
     "sharp": "^0.35.5"
   }
 }

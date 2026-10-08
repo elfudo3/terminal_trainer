@@ -19,7 +19,10 @@ describe("auth page", () => {
     expect(page.element.querySelector<HTMLElement>(".auth-existing")!.hidden).toBe(true);
     expect(page.element.querySelectorAll(".sigil-option").length).toBe(SIGILS.length);
     expect(page.element.querySelector('.sigil-option[data-sigil="knight"] img')?.getAttribute("alt")).toBe("Knight");
-    expect(page.element.querySelector(".auth-avatar .mors-model")).not.toBeNull();
+    expect(page.element.querySelector<HTMLImageElement>(".auth-portrait img")?.alt).toBe("Mors the Wizard");
+    expect(page.element.querySelector("canvas")).toBeNull(); // static backdrop in jsdom
+    expect(page.element.querySelector(".border-glow-card .auth-card")).not.toBeNull();
+    expect(page.element.textContent).toMatch(/live on this device/);
     expect(page.element.querySelector(".auth-heading-new")?.textContent).toBe("Create your profile");
   });
 
@@ -59,6 +62,13 @@ describe("auth page", () => {
     remove.click();
     expect(store.list().length).toBe(1);
     expect(page.element.querySelectorAll(".profile-button").length).toBe(1);
+  });
+
+  it("removes itself and the effect roots on dispose", () => {
+    const { page } = make();
+    page.dispose();
+    expect(document.querySelector(".auth-page")).toBeNull();
+    expect(document.querySelector(".border-glow-card")).toBeNull();
   });
 
   it("formats relative times", () => {

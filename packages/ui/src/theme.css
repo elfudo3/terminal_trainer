@@ -335,17 +335,28 @@ kbd {
   object-fit: contain;
 }
 
-.mors-avatar {
-  display: inline-block;
-  flex: none;
-  border-radius: 50%;
-  filter: drop-shadow(0 0 10px rgba(157, 140, 255, 0.25));
+/* Mors: never a circular crop (the hat would go), always the whole bust. */
+.mors-img {
+  display: block;
+  object-fit: contain;
+  object-position: center bottom;
 }
 
-.mors-avatar svg {
-  display: block;
+.mors-avatar {
+  display: inline-grid;
+  place-items: end center;
+  flex: none;
+  border-radius: 50% 50% 40% 40%;
+  background: radial-gradient(circle at 50% 70%, var(--arcane-soft), transparent 72%);
+  filter: drop-shadow(0 0 8px rgba(157, 140, 255, 0.3));
+}
+
+/* Small avatars fill their box: the brim's edges go, the face stays large. */
+.mors-avatar .mors-img {
   width: 100%;
   height: 100%;
+  object-fit: cover;
+  object-position: center top;
 }
 
 /* ---- Mors bubble --------------------------------------------------------- */
@@ -397,13 +408,34 @@ kbd {
 /* ---- Auth page ----------------------------------------------------------- */
 
 .auth-page {
+  position: relative;
   min-height: 100dvh;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 28px;
   padding: max(24px, env(safe-area-inset-top)) 20px max(24px, env(safe-area-inset-bottom));
+  background: var(--bg);
+  overflow-x: clip;
+}
+
+/* The effect layer fills the section without adding height or taking clicks. */
+.auth-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.auth-layout {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 1120px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
+  gap: 28px;
 }
 
 .auth-hero {
@@ -411,63 +443,82 @@ kbd {
   flex-direction: column;
   align-items: center;
   text-align: center;
+  gap: 16px;
+  max-width: 480px;
+}
+
+.auth-portrait {
+  margin: 0;
+  width: min(100%, 240px);
+  filter: drop-shadow(0 12px 28px rgba(0, 0, 0, 0.45)) drop-shadow(0 0 32px rgba(157, 140, 255, 0.35));
+}
+
+.auth-portrait .mors-img {
+  width: 100%;
+  height: auto;
+}
+
+.auth-intro {
+  display: flex;
+  flex-direction: column;
   gap: 10px;
-  max-width: 420px;
-}
-
-.auth-avatar .mors-avatar {
-  filter: drop-shadow(0 0 24px rgba(157, 140, 255, 0.45));
-}
-
-/* The 3D Mors: a square stage with a soft violet halo behind him. */
-.mors-model {
-  position: relative;
-  width: min(260px, 64vw);
-  aspect-ratio: 1;
-  margin: 0 auto;
-  border-radius: 50%;
-  background: radial-gradient(circle at 50% 45%, rgba(157, 140, 255, 0.22), rgba(157, 140, 255, 0.06) 55%, transparent 72%);
-  opacity: 0;
-  transition: opacity 500ms ease;
-}
-
-.mors-model.is-ready {
-  opacity: 1;
-}
-
-.mors-model canvas {
-  position: absolute;
-  inset: 0;
-  width: 100% !important;
-  height: 100% !important;
-  display: block;
-  cursor: grab;
-  /* The bust fades into the halo instead of ending on a hard edge. */
-  -webkit-mask-image: linear-gradient(to bottom, #000 80%, transparent 100%);
-  mask-image: linear-gradient(to bottom, #000 80%, transparent 100%);
-}
-
-.mors-model canvas:active {
-  cursor: grabbing;
-}
-
-.mors-model.is-fallback {
-  display: grid;
-  place-items: center;
+  text-shadow: 0 1px 12px var(--bg);
 }
 
 .auth-title {
-  font-size: 30px;
+  font-size: 32px;
 }
 
 .auth-tagline {
+  color: var(--text);
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.auth-note {
   color: var(--muted);
-  font-size: 15px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+@media (min-width: 900px) {
+  .auth-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(320px, 440px);
+    align-items: center;
+    gap: 48px;
+  }
+
+  .auth-hero {
+    flex-direction: row;
+    align-items: center;
+    text-align: left;
+    max-width: none;
+    gap: 28px;
+  }
+
+  .auth-portrait {
+    flex: none;
+    width: min(46%, 320px);
+  }
+}
+
+@media (min-width: 600px) and (max-width: 899px) {
+  .auth-portrait {
+    width: 300px;
+  }
+
+  .auth-intro {
+    align-items: flex-start;
+  }
+}
+
+.auth-card-host {
+  width: 100%;
+  max-width: 440px;
 }
 
 .auth-card {
   width: 100%;
-  max-width: 440px;
   padding: 24px;
 }
 
@@ -782,6 +833,53 @@ kbd {
 
 .challenge-reveal[hidden] {
   display: none;
+}
+
+/* ---- Effects (React Bits integration) ------------------------------------ */
+
+/* Static version of the backdrop: shown until WebGL draws, or instead of it. */
+.fx-backdrop {
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(60% 50% at 15% 0%, var(--arcane-soft), transparent 70%),
+    radial-gradient(50% 40% at 90% 100%, rgba(242, 184, 75, 0.1), transparent 70%),
+    repeating-linear-gradient(0deg, transparent 0 39px, rgba(255, 255, 255, 0.025) 39px 40px),
+    repeating-linear-gradient(90deg, transparent 0 39px, rgba(255, 255, 255, 0.025) 39px 40px);
+}
+
+.fx-backdrop-canvas {
+  position: absolute;
+  inset: 0;
+}
+
+/* The scrim between the glyphs and the content: darker towards the edges. */
+.fx-backdrop::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 75% 70% at 50% 50%, color-mix(in srgb, var(--bg) 78%, transparent) 30%, color-mix(in srgb, var(--bg) 35%, transparent));
+}
+
+.fx-backdrop.is-static::after {
+  display: none;
+}
+
+/* A card inside the glow treatment: the glow card draws the surface now. */
+.card.in-glow {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  border-radius: inherit;
+}
+
+/* The wrapper is one block in the layout, never a scroll container. */
+.border-glow-card .border-glow-inner {
+  overflow: visible;
+}
+
+/* Keyboard and touch users get the same emphasis without hovering. */
+.border-glow-card:focus-within {
+  border-color: var(--arcane);
 }
 
 /* ---- Accessibility ------------------------------------------------------- */

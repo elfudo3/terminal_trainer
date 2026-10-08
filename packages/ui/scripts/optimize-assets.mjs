@@ -5,14 +5,14 @@
  *
  * - Sigil icons (1254px PNG) → 256px WebP, for avatars up to 112px at 2x.
  * - Logo → favicon, Apple touch icon and an Open Graph card for the web app.
- * - Mors (45 MB Blender GLB) → a few MB: simplified mesh, meshopt
- *   compression, 1024px WebP textures.
+ * - Mors portrait → a 720px WebP for the sign-in page and a 192px one for
+ *   the small avatars beside his name, plus its dimensions (JSON) so the
+ *   apps can reserve the right aspect ratio before the image loads.
  *
  * Sources stay untouched; outputs go to src/assets/optimized (committed, so
  * nobody needs this tooling to build the apps).
  */
-import { execFileSync } from "node:child_process";
-import { mkdirSync, readdirSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import sharp from "sharp";
@@ -23,13 +23,14 @@ const out = join(src, "optimized");
 const webPublic = join(here, "../../../apps/web/public");
 const mobilePublic = join(here, "../../../apps/mobile/public");
 const INK = { r: 10, g: 13, b: 20, alpha: 1 };
+const TRANSPARENT = { r: 0, g: 0, b: 0, alpha: 0 };
 
 mkdirSync(join(out, "sigils"), { recursive: true });
 
 // ---- Sigils ---------------------------------------------------------------
 for (const file of readdirSync(src).filter((f) => f.endsWith("_icon.png"))) {
   const name = file.replace("_icon.png", "");
-  await sharp(join(src, file)).resize(256, 256, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } }).webp({ quality: 88 }).toFile(join(out, "sigils", `${name}.webp`));
+  await sharp(join(src, file)).resize(256, 256, { fit: "contain", background: TRANSPARENT }).webp({ quality: 88 }).toFile(join(out, "sigils", `${name}.webp`));
   console.log(`sigil ${name}`);
 }
 
@@ -54,16 +55,15 @@ await sharp({ create: { width: 1200, height: 630, channels: 4, background: INK }
   .toFile(join(webPublic, "og-image.png"));
 console.log("logo + icons");
 
-// ---- Mors -----------------------------------------------------------------
-execFileSync(
-  "npx",
-  [
-    "gltf-transform", "optimize", join(src, "mors_v1.glb"), join(out, "mors.glb"),
-    "--compress", "meshopt",
-    "--simplify-error", "0.0015",
-    "--texture-compress", "webp",
-    "--texture-size", "1024",
-  ],
-  { stdio: "inherit" },
-);
-console.log("model");
+// ---- Mors portrait --------------------------------------------------------
+// The pixel-art portrait is the intended source. Until it is added to
+// src/assets, a still rendered from the Blender model stands in.
+const pixel = join(src, "mors_pixel_vers.png");
+const portraitSource = existsSync(pixel) ? pixel : join(src, "mors_render_v1.png");
+if (portraitSource !== pixel) console.warn("mors_pixel_vers.png not found in src/assets; using mors_render_v1.png (rendered from the model) instead.");
+const trimmed = await sharp(portraitSource).trim({ threshold: 8 }).toBuffer();
+const portrait = await sharp(trimmed).resize({ width: 720, withoutEnlargement: true }).webp({ quality: 86 }).toBuffer({ resolveWithObject: true });
+writeFileSync(join(out, "mors-portrait.webp"), portrait.data);
+await sharp(trimmed).resize({ width: 192 }).webp({ quality: 86 }).toFile(join(out, "mors-avatar.webp"));
+writeFileSync(join(out, "mors-portrait.json"), JSON.stringify({ width: portrait.info.width, height: portrait.info.height }) + "\n");
+console.log(`mors portrait ${portrait.info.width}×${portrait.info.height}`);

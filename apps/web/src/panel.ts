@@ -5,7 +5,7 @@
  * terminal.
  */
 import type { MorsVoice, Trainer } from "@terminal-trainer/core";
-import { createMorsBubble, type MorsBubble } from "@terminal-trainer/ui";
+import { applyBorderGlow, createMorsBubble, type MorsBubble } from "@terminal-trainer/ui";
 
 export interface PanelOptions {
   trainer: Trainer;
@@ -19,6 +19,7 @@ export interface Panel {
   element: HTMLElement;
   bubble: MorsBubble;
   render(): void;
+  dispose(): void;
 }
 
 export function createPanel(root: HTMLElement, opts: PanelOptions): Panel {
@@ -63,6 +64,7 @@ export function createPanel(root: HTMLElement, opts: PanelOptions): Panel {
   root.appendChild(element);
 
   const q = <T extends HTMLElement>(selector: string) => element.querySelector<T>(selector)!;
+  const glow = applyBorderGlow(q(".challenge"), { hostClass: "challenge-host" });
   const bubble = createMorsBubble(q(".panel-mors"), { speed: opts.typing ?? 16 });
   const answer = q<HTMLElement>(".challenge-answer");
   const status = q(".challenge-status");
@@ -135,5 +137,5 @@ export function createPanel(root: HTMLElement, opts: PanelOptions): Panel {
 
   trainer.subscribe(render);
   render();
-  return { element, bubble, render };
+  return { element, bubble, render, dispose: () => glow.dispose() };
 }

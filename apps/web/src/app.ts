@@ -35,6 +35,8 @@ export interface Session {
   terminal: TerminalView;
   panel: Panel;
   element: HTMLElement;
+  /** Releases the effects' React roots; call before removing the element. */
+  dispose(): void;
 }
 
 export interface WebApp {
@@ -61,6 +63,7 @@ export function createWebApp(root: HTMLElement, opts: WebAppOptions = {}): WebAp
     root.replaceChildren();
     app.session = createSession(root, profile, opts, () => {
       store.signOut();
+      app.session?.dispose();
       app.session = null;
       showAuth();
     });
@@ -190,5 +193,5 @@ function createSession(root: HTMLElement, profile: Profile, opts: WebAppOptions,
     showHome(mors.welcome(profile.name, trainer.overall.done > 0));
   }
 
-  return { profile, shell, trainer, mors, terminal, panel, element };
+  return { profile, shell, trainer, mors, terminal, panel, element, dispose: () => panel.dispose() };
 }
