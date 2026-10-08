@@ -413,7 +413,7 @@ kbd {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: max(24px, env(safe-area-inset-top)) 20px max(24px, env(safe-area-inset-bottom));
+  padding: max(20px, env(safe-area-inset-top)) 20px max(20px, env(safe-area-inset-bottom));
   background: var(--bg);
   overflow-x: clip;
 }
@@ -435,7 +435,7 @@ kbd {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   justify-items: center;
-  gap: 28px;
+  gap: 20px;
 }
 
 .auth-hero {
@@ -443,13 +443,13 @@ kbd {
   flex-direction: column;
   align-items: center;
   text-align: center;
-  gap: 16px;
+  gap: 12px;
   max-width: 480px;
 }
 
 .auth-portrait {
   margin: 0;
-  width: min(100%, 200px);
+  width: min(100%, 180px);
   filter: drop-shadow(0 12px 28px rgba(0, 0, 0, 0.45)) drop-shadow(0 0 32px rgba(157, 140, 255, 0.35));
 }
 
@@ -466,7 +466,7 @@ kbd {
 }
 
 .auth-title {
-  font-size: 32px;
+  font-size: clamp(26px, 7vw, 32px);
 }
 
 .auth-tagline {
