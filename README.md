@@ -107,7 +107,7 @@ Mors is scripted (`packages/core/src/mors/voice.ts`), so his lines are instant a
 
 ## Artwork
 
-Source images live in `packages/ui/src/assets`. To change them, replace the files and run `npm run assets -w packages/ui`, which regenerates the optimised versions the apps ship (see the table in `docs/DESIGN.md`). Mors's portrait is meant to come from `mors_pixel_vers.png`; until that file is added, the script uses `mors_render_v1.png`, a still of the 3D model, and says so. Native app icons are a separate step: `npm run assets -w apps/mobile` regenerates them from `apps/mobile/resources/`.
+Source images live in `packages/ui/src/assets`. To change them, replace the files and run `npm run assets -w packages/ui`, which regenerates the optimised versions the apps ship (see the table in `docs/DESIGN.md`). Mors's portrait and avatars come from `mors_pixel_vers.png`. Native app icons are a separate step: `npm run assets -w apps/mobile` regenerates them from `apps/mobile/resources/`.
 
 ## Deploy the web app
 

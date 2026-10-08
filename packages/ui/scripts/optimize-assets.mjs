@@ -12,7 +12,7 @@
  * Sources stay untouched; outputs go to src/assets/optimized (committed, so
  * nobody needs this tooling to build the apps).
  */
-import { existsSync, mkdirSync, readdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import sharp from "sharp";
@@ -56,12 +56,7 @@ await sharp({ create: { width: 1200, height: 630, channels: 4, background: INK }
 console.log("logo + icons");
 
 // ---- Mors portrait --------------------------------------------------------
-// The pixel-art portrait is the intended source. Until it is added to
-// src/assets, a still rendered from the Blender model stands in.
-const pixel = join(src, "mors_pixel_vers.png");
-const portraitSource = existsSync(pixel) ? pixel : join(src, "mors_render_v1.png");
-if (portraitSource !== pixel) console.warn("mors_pixel_vers.png not found in src/assets; using mors_render_v1.png (rendered from the model) instead.");
-const trimmed = await sharp(portraitSource).trim({ threshold: 8 }).toBuffer();
+const trimmed = await sharp(join(src, "mors_pixel_vers.png")).trim({ threshold: 8 }).toBuffer();
 const portrait = await sharp(trimmed).resize({ width: 720, withoutEnlargement: true }).webp({ quality: 86 }).toBuffer({ resolveWithObject: true });
 writeFileSync(join(out, "mors-portrait.webp"), portrait.data);
 await sharp(trimmed).resize({ width: 192 }).webp({ quality: 86 }).toFile(join(out, "mors-avatar.webp"));

@@ -449,7 +449,7 @@ kbd {
 
 .auth-portrait {
   margin: 0;
-  width: min(100%, 240px);
+  width: min(100%, 200px);
   filter: drop-shadow(0 12px 28px rgba(0, 0, 0, 0.45)) drop-shadow(0 0 32px rgba(157, 140, 255, 0.35));
 }
 
@@ -504,7 +504,7 @@ kbd {
 
 @media (min-width: 600px) and (max-width: 899px) {
   .auth-portrait {
-    width: 300px;
+    width: 260px;
   }
 
   .auth-intro {

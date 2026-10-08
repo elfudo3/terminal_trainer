@@ -57,7 +57,7 @@ A light theme exists for people who use it, with the same roles at higher contra
 - `hint` / `mors help` in the terminal.
 - His files: `/opt/mors` with a hidden `.chamber`, notes about Valdraak and threshold walking, a riddle, a log in `/var/log/mors.log`, a note in the user's documents. Several challenges send the user to find them.
 
-**Art.** One picture of Mors, used everywhere (`packages/ui/src/mors-image.ts`): the portrait on the sign-in page and the small avatar beside his name in every bubble come from the same artwork, so he looks like one person throughout. The image keeps its real aspect ratio (width and height are reserved before it loads) and is never cropped into a circle, which would cost him the hat. The intended source is the pixel-art portrait `mors_pixel_vers.png`; until it is in `src/assets`, a still rendered from the Blender model (`mors_render_v1.png`) stands in. The model itself (`mors_v1.glb`) stays in the repo as source but is no longer shipped or fetched.
+**Art.** One picture of Mors, used everywhere (`packages/ui/src/mors-image.ts`): the portrait on the sign-in page and the small avatar beside his name in every bubble come from the same artwork, so he looks like one person throughout. The image keeps its real aspect ratio (width and height are reserved before it loads) and is never cropped into a circle, which would cost him the hat. The source is the pixel-art portrait `mors_pixel_vers.png`: a low-poly wizard in violet with a terminal prompt on his hat band, red eyes and a white beard, which also gives the small avatars crisp, readable shapes. The 3D model (`mors_v1.glb`) stays in the repo as source but is no longer shipped or fetched.
 
 **Effects.** Two [React Bits](https://reactbits.dev) components, vendored unchanged under `packages/ui/src/vendor/react-bits` and mounted in isolated React roots from vanilla code (`packages/ui/src/effects`):
 
@@ -72,7 +72,7 @@ Source artwork lives in `packages/ui/src/assets` and is never edited: seven sigi
 | --- | --- | --- |
 | `*_icon.png` (≈1 MB each) | 256px WebP, 11–18 KB each | avatars never exceed 112px at 2× |
 | `terminal_trainer_logo_v2.png` | 256px WebP brand mark; 64/192/512 PNG icons, an opaque 180px Apple touch icon and a 1200×630 Open Graph card in each app's `public/` | favicon, home-screen icon and link previews |
-| `mors_pixel_vers.png` (or `mors_render_v1.png` until it exists) | `mors-portrait.webp` (720px, ≈47 KB) for the sign-in page, `mors-avatar.webp` (192px) for the bubbles, and `mors-portrait.json` with the dimensions | one lightweight picture of Mors for every screen, with the aspect ratio known before it loads |
+| `mors_pixel_vers.png` (1254px, transparent) | `mors-portrait.webp` (720px, ≈47 KB) for the sign-in page, `mors-avatar.webp` (192px) for the bubbles, and `mors-portrait.json` with the dimensions | one lightweight picture of Mors for every screen, with the aspect ratio known before it loads |
 
 Profiles store a sigil id (`star`, `moon`, `lightning`, `blackhole`, `flower`, `jellyfish`, `knight`); profiles saved before the artwork existed map their old glyph to the nearest icon.
 

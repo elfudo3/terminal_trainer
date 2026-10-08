@@ -9,7 +9,8 @@ describe("Mors image", () => {
     expect(img.alt).toBe(MORS_ALT);
     expect(img.height).toBe(320);
     expect(img.width).toBe(Math.round(320 * MORS_ASPECT));
-    expect(MORS_ASPECT).toBeGreaterThan(1); // wider than tall: the hat brim
+    expect(MORS_ASPECT).toBeGreaterThan(0.5); // the pixel portrait is a little taller than wide
+    expect(MORS_ASPECT).toBeLessThan(1);
     expect(img.src).toMatch(/mors-portrait/);
   });
 
