@@ -6,6 +6,10 @@
   min-height: 100dvh;
 }
 
+/* The same background renderer and configuration as the profile page. */
+.session-with-backdrop { position: relative; isolation: isolate; }
+.session-with-backdrop > :not(.session-backdrop) { position: relative; z-index: 1; }
+
 /* ---- App bar ------------------------------------------------------------- */
 
 .appbar {

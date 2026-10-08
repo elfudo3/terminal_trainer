@@ -14,7 +14,9 @@
     "./vite-plugins": "./vite-plugins.ts"
   },
   "dependencies": {
+    "@fontsource/ibm-plex-sans": "^5.3.0",
     "@fontsource/jetbrains-mono": "^5.3.0",
+    "@fontsource/oxanium": "^5.3.0",
     "@terminal-trainer/core": "*",
     "ogl": "^1.0.11",
     "react": "^19.3.0",

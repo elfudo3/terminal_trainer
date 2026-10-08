@@ -17,7 +17,7 @@ import {
   type Profile,
   type ProgressStorage,
 } from "@terminal-trainer/core";
-import { avatar, brandMark, createAuthPage, createMorsBubble, createTerminal, createTrackMenu, type TerminalView } from "@terminal-trainer/ui";
+import { avatar, brandMark, createAuthPage, createBackdrop, createMorsBubble, createTerminal, createTrackMenu, type TerminalView } from "@terminal-trainer/ui";
 import { createPanel, type Panel } from "./panel";
 
 export interface WebAppOptions {
@@ -84,8 +84,9 @@ function createSession(root: HTMLElement, profile: Profile, opts: WebAppOptions,
   const typing = opts.typing ?? 16;
 
   const element = document.createElement("div");
-  element.className = "app arcane-bg";
+  element.className = "app session-with-backdrop";
   element.innerHTML = `
+    <div class="session-backdrop"></div>
     <header class="appbar">
       <div class="brand">Terminal Trainer</div>
       <div class="profile-chip">
@@ -120,6 +121,7 @@ function createSession(root: HTMLElement, profile: Profile, opts: WebAppOptions,
   root.appendChild(element);
 
   const q = <T extends HTMLElement>(selector: string) => element.querySelector<T>(selector)!;
+  const backdrop = createBackdrop(q(".session-backdrop"), { pointerSource: element });
   q(".brand").prepend(brandMark(28));
   q(".profile-chip").prepend(avatar(profile.sigil, 30));
   q(".profile-chip-name").textContent = profile.name;
@@ -168,7 +170,7 @@ function createSession(root: HTMLElement, profile: Profile, opts: WebAppOptions,
     },
   });
 
-  createTrackMenu(q(".home-tracks"), trainer, {
+  const menu = createTrackMenu(q(".home-tracks"), trainer, {
     onSelect: (trackId) => {
       const wasOpen = trainer.track?.id === trackId;
       trainer.selectTrack(trackId);
@@ -193,5 +195,5 @@ function createSession(root: HTMLElement, profile: Profile, opts: WebAppOptions,
     showHome(mors.welcome(profile.name, trainer.overall.done > 0));
   }
 
-  return { profile, shell, trainer, mors, terminal, panel, element, dispose: () => panel.dispose() };
+  return { profile, shell, trainer, mors, terminal, panel, element, dispose: () => { panel.dispose(); menu.dispose(); backdrop.dispose(); } };
 }

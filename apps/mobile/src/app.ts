@@ -17,7 +17,7 @@ import {
   type Profile,
   type ProgressStorage,
 } from "@terminal-trainer/core";
-import { brandMark, createAuthPage } from "@terminal-trainer/ui";
+import { brandMark, createAuthPage, createBackdrop } from "@terminal-trainer/ui";
 import { createTabs, type Tabs } from "./components/tabs";
 import { showToast } from "./components/toast";
 import { noopNative, type NativeBridge } from "./native";
@@ -48,6 +48,7 @@ export interface Session {
   settings: SettingsSheet;
   /** Android back button logic; returns true when handled. */
   back(): boolean;
+  dispose(): void;
 }
 
 export interface App {
@@ -78,6 +79,7 @@ export function createApp(root: HTMLElement, opts: AppOptions = {}): App {
     root.replaceChildren();
     app.session = createSession(root, profile, opts, () => {
       store.signOut();
+      app.session?.dispose();
       app.session = null;
       showAuth();
     });
@@ -101,14 +103,16 @@ function createSession(root: HTMLElement, profile: Profile, opts: AppOptions, on
   const prefs = loadPreferences(storage);
 
   const element = document.createElement("div");
-  element.className = "app";
+  element.className = "app session-with-backdrop";
   element.innerHTML = `
+    <div class="session-backdrop"></div>
     <header class="appbar">
       <h1 class="appbar-title">Terminal Trainer</h1>
       <button type="button" class="icon-button settings-button" aria-label="Settings">${ICONS.settings}</button>
     </header>
     <main class="screens"></main>`;
   root.appendChild(element);
+  const backdrop = createBackdrop(element.querySelector<HTMLElement>(".session-backdrop")!, { pointerSource: element });
   element.querySelector(".appbar-title")!.prepend(brandMark(26));
   const screens = element.querySelector<HTMLElement>(".screens")!;
 
@@ -207,5 +211,5 @@ function createSession(root: HTMLElement, profile: Profile, opts: AppOptions, on
     goHome(mors.welcome(profile.name, trainer.overall.done > 0));
   }
 
-  return { profile, element, shell, trainer, mors, tabs, home, practice, learn, settings, back };
+  return { profile, element, shell, trainer, mors, tabs, home, practice, learn, settings, back, dispose: () => { home.dispose(); backdrop.dispose(); } };
 }

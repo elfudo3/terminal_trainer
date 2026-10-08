@@ -19,6 +19,13 @@ button {
   user-select: none;
 }
 
+/* The shared entry page scrolls independently of the native app frame. */
+#app:has(> .auth-page) { height: 100dvh; overflow-y: auto; }
+.session-with-backdrop { position: relative; isolation: isolate; }
+.session-with-backdrop > .appbar,
+.session-with-backdrop > .screens,
+.session-with-backdrop > .tabbar { position: relative; z-index: 1; }
+
 /* ---- App frame ----------------------------------------------------------- */
 
 .app {

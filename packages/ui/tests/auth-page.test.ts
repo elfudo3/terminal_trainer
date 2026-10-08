@@ -22,7 +22,7 @@ describe("auth page", () => {
     expect(page.element.querySelector<HTMLImageElement>(".auth-portrait img")?.alt).toBe("Mors the Wizard");
     expect(page.element.querySelector("canvas")).toBeNull(); // static backdrop in jsdom
     expect(page.element.querySelector(".border-glow-card .auth-card")).not.toBeNull();
-    expect(page.element.textContent).toMatch(/live on this device/);
+    expect(page.element.textContent).toMatch(/Progress saved on this device/);
     expect(page.element.querySelector(".auth-heading-new")?.textContent).toBe("Create your profile");
   });
 
@@ -33,6 +33,23 @@ describe("auth page", () => {
     submit();
     expect(onSignIn).toHaveBeenCalledWith(expect.objectContaining({ name: "Fudo", sigil: SIGILS[3] }));
     expect(store.current?.name).toBe("Fudo");
+  });
+
+  it("keeps keyboard focus and selection together in the avatar radio group", () => {
+    const { page, name, submit, onSignIn } = make();
+    const selected = () => page.element.querySelector<HTMLButtonElement>('[role="radio"][aria-checked="true"]')!;
+    selected().focus();
+    selected().dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true, cancelable: true }));
+    expect(selected().dataset.sigil).toBe(SIGILS[1]);
+    expect(document.activeElement).toBe(selected());
+    expect(page.element.querySelectorAll('.sigil-option[tabindex="0"]').length).toBe(1);
+    selected().dispatchEvent(new KeyboardEvent("keydown", { key: "Home", bubbles: true }));
+    selected().dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowLeft", bubbles: true }));
+    expect(selected().dataset.sigil).toBe(SIGILS.at(-1));
+    name.value = "Keyboard learner";
+    submit();
+    expect(onSignIn).toHaveBeenCalledWith(expect.objectContaining({ sigil: SIGILS.at(-1) }));
+    page.dispose();
   });
 
   it("shows validation errors inline", () => {

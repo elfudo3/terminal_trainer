@@ -30,4 +30,21 @@ describe("track menu", () => {
     expect(git.querySelector(".track-count")?.textContent).toBe("Completed");
     expect(git.querySelector<HTMLElement>(".progress-bar")?.style.width).toBe("100%");
   });
+  it("preserves focused cards on progress updates and releases glow roots on disposal", () => {
+    document.body.innerHTML = '<div id="root"></div>';
+    const { trainer } = makeTrainer();
+    const menu = createTrackMenu(document.getElementById("root")!, trainer, { onSelect: vi.fn() });
+    const card = menu.element.querySelector<HTMLButtonElement>(".track-card")!;
+    card.focus();
+    trainer.selectTrack("navigation");
+    expect(document.activeElement).toBe(card);
+    expect(menu.element.querySelectorAll(".border-glow-card").length).toBe(2);
+    expect(card.closest('[role="listitem"]')).not.toBeNull();
+    expect(card.getAttribute("role")).toBeNull(); // retain native button semantics
+    menu.dispose();
+    trainer.leaveTrack();
+    expect(document.querySelector(".border-glow-card")).toBeNull();
+    expect(menu.element.querySelector(".border-glow-card")).toBeNull(); // no rebuild after disposal
+  });
+
 });

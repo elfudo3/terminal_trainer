@@ -40,6 +40,8 @@ describe("web app flow", () => {
   it("after sign-in, Mors welcomes you by name on the home page with every track listed", () => {
     signIn("Fudo");
     expect(q(".auth-page")).toBeNull();
+    expect(q(".session-backdrop.fx-backdrop")).not.toBeNull();
+    expect(document.querySelectorAll(".track-card-host .border-glow-card").length).toBe(tracks.length);
     expect(text(".view-home .mors-text")).toContain("Fudo");
     expect(document.querySelectorAll(".track-card").length).toBe(tracks.length);
     expect(text(".profile-chip")).toContain("Fudo");
